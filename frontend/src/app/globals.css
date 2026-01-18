@@ -131,10 +131,16 @@
   height: 14px;
 }
 
-::-webkit-scrollbar-button {
+/* Comprehensive button hiding */
+::-webkit-scrollbar-button,
+::-webkit-scrollbar-button:start:decrement,
+::-webkit-scrollbar-button:end:increment,
+::-webkit-scrollbar-button:vertical,
+::-webkit-scrollbar-button:horizontal {
   display: none;
   width: 0;
   height: 0;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-track {
