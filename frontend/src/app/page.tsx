@@ -335,22 +335,37 @@ export default function Home() {
     // Date (bottom center) - numeric format
     const hijriDate = toHijri(date);
     const gregorianStr = format(date, 'd-M-yyyy');
+
+    // Logical Order: Day Month Year (Let Canvas handle Bidi/RTL via ctx.direction)
     const hijriStr = isRTL
       ? `${hijriDate.day} ${HIJRI_MONTHS_AR[hijriDate.month - 1]} ${hijriDate.year} هـ`
       : `${hijriDate.day} ${HIJRI_MONTHS[hijriDate.month - 1]} ${hijriDate.year} AH`;
-    // For Arabic, ensure visual ordering is correct (Gregorian • Hijri)
-    const dateStr = `${gregorianStr}  •  ${hijriStr}`;
 
-    ctx.font = '16px Inter, sans-serif';
+    // Combine strings. For RTL, we want Hijri on the Right, Gregorian on the Left.
+    // With ctx.direction = 'rtl', the string starts rendering from Right.
+    // So "Hijri • Greg" -> Hijri is First, so it goes to the Right.
+    const dateStr = isRTL
+      ? `${hijriStr}  •  ${gregorianStr}`
+      : `${gregorianStr}  •  ${hijriStr}`;
+
+    ctx.save(); // Save context to restore later (though we are at end of function)
+    ctx.font = isRTL ? '17px Cairo, sans-serif' : '16px Inter, sans-serif';
     ctx.fillStyle = '#e4e4e7';
     ctx.textAlign = 'center';
+
+    if (isRTL) {
+      ctx.direction = 'rtl';
+    } else {
+      ctx.direction = 'ltr';
+    }
+
     ctx.fillText(dateStr, W / 2, H - footerHeight / 2);
+    ctx.restore();
 
     // Draw Legend box
     const legendW = 280;
     const legendH = 110;
     // Position: LTR -> Right, RTL -> Left
-    const legendX = isRTL ? 20 : W - legendW - 20;
     const legendY = H - footerHeight - 120;
 
     // Legend background
