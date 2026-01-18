@@ -1,16 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Cairo } from "next/font/google";
+import { Outfit, Tajawal } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+const outfit = Outfit({
+  variable: "--font-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const cairo = Cairo({
-  variable: "--font-cairo",
-  subsets: ["arabic", "latin"],
-  weight: ["400", "500", "600", "700"],
+const tajawal = Tajawal({
+  variable: "--font-tajawal",
+  subsets: ["arabic"],
+  weight: ["200", "300", "400", "500", "700", "800", "900"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -41,7 +43,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${inter.variable} ${cairo.variable} antialiased font-sans`}
+        className={`${outfit.variable} ${tajawal.variable} antialiased font-sans`}
       >
         {children}
       </body>

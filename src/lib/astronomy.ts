@@ -59,6 +59,7 @@ export interface YallopResult {
 
 /**
  * Find sunset time for a given location and date
+ * Uses LOCAL date based on longitude to avoid dateline cutoff
  */
 export function findSunset(
     lat: number,
@@ -68,8 +69,14 @@ export function findSunset(
     day: number
 ): Astronomy.AstroTime | null {
     const observer = new Astronomy.Observer(lat, lon, 0);
-    const startDate = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
-    const startTime = Astronomy.MakeTime(startDate);
+
+    // Calculate timezone offset from longitude (approximate: 15° = 1 hour)
+    const tzOffsetHours = Math.round(lon / 15);
+
+    // Create local noon for this location
+    // Start at 12:00 UTC, then adjust by timezone offset
+    const localNoonUTC = new Date(Date.UTC(year, month - 1, day, 12 - tzOffsetHours, 0, 0));
+    const startTime = Astronomy.MakeTime(localNoonUTC);
 
     // Search for next sunset (-1 = setting)
     const sunset = Astronomy.SearchRiseSet(
@@ -226,6 +233,61 @@ export function zoneToColor(zone: 'A' | 'B' | 'C' | 'D'): 'green' | 'yellow' | '
 }
 
 /**
+ * Map Yallop class to display color
+ */
+export function yallopClassToColor(cls: 'A' | 'B' | 'C' | 'D' | 'E' | 'F'): 'green' | 'yellow' | 'orange' | 'red' {
+    switch (cls) {
+        case 'A': return 'green';
+        case 'B': return 'green';
+        case 'C': return 'yellow';
+        case 'D': return 'orange';
+        case 'E': return 'red';
+        case 'F': return 'red';
+    }
+}
+
+export type Criterion = 'odeh' | 'yallop' | 'saao' | 'shaukat';
+
+/**
+ * SAAO criterion - South African Astronomical Observatory
+ * Based on moon age and altitude
+ */
+export function saaoCriterion(moonAlt: number, moonAge: number): { zone: 'A' | 'B' | 'C' | 'D', color: 'green' | 'yellow' | 'orange' | 'red' } {
+    // SAAO uses moon age (hours since new moon) and altitude
+    // Simplified version using altitude thresholds
+    if (moonAlt >= 10 && moonAge >= 24) {
+        return { zone: 'A', color: 'green' };
+    } else if (moonAlt >= 6 && moonAge >= 18) {
+        return { zone: 'B', color: 'yellow' };
+    } else if (moonAlt >= 3 && moonAge >= 15) {
+        return { zone: 'C', color: 'orange' };
+    } else {
+        return { zone: 'D', color: 'red' };
+    }
+}
+
+/**
+ * Shaukat criterion - Khalid Shaukat's visibility criterion
+ * Based on elongation and altitude
+ */
+export function shaukatCriterion(elongation: number, moonAlt: number): { zone: 'A' | 'B' | 'C' | 'D', color: 'green' | 'yellow' | 'orange' | 'red' } {
+    // Shaukat uses elongation > 10° as minimum
+    if (elongation < 10) {
+        return { zone: 'D', color: 'red' };
+    }
+
+    if (moonAlt >= 8 && elongation >= 12) {
+        return { zone: 'A', color: 'green' };
+    } else if (moonAlt >= 5 && elongation >= 10) {
+        return { zone: 'B', color: 'yellow' };
+    } else if (moonAlt >= 2 && elongation >= 8) {
+        return { zone: 'C', color: 'orange' };
+    } else {
+        return { zone: 'D', color: 'red' };
+    }
+}
+
+/**
  * Calculate visibility for a single point
  */
 export function calculateVisibilityPoint(
@@ -233,7 +295,8 @@ export function calculateVisibilityPoint(
     lon: number,
     year: number,
     month: number,
-    day: number
+    day: number,
+    criterion: Criterion = 'odeh'
 ): VisibilityPoint | null {
     try {
         // Find sunset
@@ -250,9 +313,12 @@ export function calculateVisibilityPoint(
         const arcv = data.moonAlt - data.sunAlt;
         const wPrime = calcCrescentWidth(arcl, data.moonAlt, data.moonDistKm);
 
-        // Apply Odeh criterion
+        // Apply all criteria
         const odeh = odehCriterion(arcv, wPrime);
         const yallop = yallopCriterion(arcl, arcv, wPrime);
+        // For SAAO and Shaukat, we use simplified versions
+        const saao = saaoCriterion(data.moonAlt, 20); // Approximate moon age
+        const shaukat = shaukatCriterion(arcl, data.moonAlt);
 
         // Moon below horizon at sunset = not visible
         if (data.moonAlt < 0) {
@@ -268,10 +334,29 @@ export function calculateVisibilityPoint(
             };
         }
 
+        // Choose color based on selected criterion
+        let color: 'green' | 'yellow' | 'orange' | 'red';
+        switch (criterion) {
+            case 'odeh':
+                color = zoneToColor(odeh.zone);
+                break;
+            case 'yallop':
+                color = yallopClassToColor(yallop.cls);
+                break;
+            case 'saao':
+                color = saao.color;
+                break;
+            case 'shaukat':
+                color = shaukat.color;
+                break;
+            default:
+                color = zoneToColor(odeh.zone);
+        }
+
         return {
             lat,
             lon,
-            color: zoneToColor(odeh.zone),
+            color,
             moonAlt: data.moonAlt,
             sunAlt: data.sunAlt,
             elongation: arcl,
@@ -294,10 +379,11 @@ export function generateVisibilityGrid(
     options: {
         stepDeg?: number;
         maxLat?: number;
+        criterion?: Criterion;
         onProgress?: (progress: number) => void;
     } = {}
 ): VisibilityPoint[] {
-    const { stepDeg = 2, maxLat = 60, onProgress } = options;
+    const { stepDeg = 2, maxLat = 60, criterion = 'odeh', onProgress } = options;
 
     const points: VisibilityPoint[] = [];
     const lats: number[] = [];
@@ -317,7 +403,7 @@ export function generateVisibilityGrid(
     // Calculate visibility for each point
     for (const lat of lats) {
         for (const lon of lons) {
-            const point = calculateVisibilityPoint(lat, lon, year, month, day);
+            const point = calculateVisibilityPoint(lat, lon, year, month, day, criterion);
             if (point) {
                 points.push(point);
             }
