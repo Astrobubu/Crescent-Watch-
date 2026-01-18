@@ -100,6 +100,13 @@ export function Header() {
                                     <Globe className="h-4 w-4" />
                                     <span>constantlabs.ai</span>
                                 </a>
+                                <a
+                                    href="mailto:akhmad6093@gmail.com"
+                                    className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm mt-2"
+                                >
+                                    <Mail className="h-4 w-4" />
+                                    <span>akhmad6093@gmail.com</span>
+                                </a>
                             </div>
                         </div>
                     </div>

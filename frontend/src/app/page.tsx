@@ -324,12 +324,15 @@ export default function Home() {
     ctx.fillStyle = '#a78bfa';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText('Crescent Watch', 24, H - footerHeight / 2);
+    ctx.fillText(isRTL ? 'رصد الاهلة' : 'Crescent Watch', 24, H - footerHeight / 2);
 
     // Date (bottom center) - numeric format
     const hijriDate = toHijri(date);
     const gregorianStr = format(date, 'd-M-yyyy');
-    const hijriStr = `${hijriDate.day} ${HIJRI_MONTHS[hijriDate.month - 1]} ${hijriDate.year} AH`;
+    const hijriStr = isRTL
+      ? `${hijriDate.day} ${HIJRI_MONTHS_AR[hijriDate.month - 1]} ${hijriDate.year} هـ`
+      : `${hijriDate.day} ${HIJRI_MONTHS[hijriDate.month - 1]} ${hijriDate.year} AH`;
+    // For Arabic, ensure visual ordering is correct (Gregorian • Hijri)
     const dateStr = `${gregorianStr}  •  ${hijriStr}`;
 
     ctx.font = '16px Inter, sans-serif';
@@ -340,7 +343,7 @@ export default function Home() {
     // Draw Legend box (bottom right, above footer)
     const legendX = W - 220;
     const legendY = H - footerHeight - 120;
-    const legendW = 200;
+    const legendW = 280; // Wider legend as requested
     const legendH = 110;
 
     // Legend background
@@ -357,21 +360,25 @@ export default function Home() {
     ctx.fillStyle = '#a1a1aa';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText('VISIBILITY ZONES', legendX + 12, legendY + 10);
+    const titleText = isRTL ? 'مناطق الرؤية' : 'VISIBILITY ZONES';
+    ctx.fillText(titleText, legendX + 12, legendY + 10);
     ctx.font = '10px Inter, sans-serif';
     ctx.fillStyle = '#71717a';
     ctx.textAlign = 'right';
-    ctx.fillText(criterion.charAt(0).toUpperCase() + criterion.slice(1), legendX + legendW - 12, legendY + 10);
+    const criterionText = criterion === 'yallop'
+      ? (isRTL ? 'يالوب' : 'Yallop')
+      : (isRTL ? 'عودة' : 'Odeh');
+    ctx.fillText(criterionText, legendX + legendW - 12, legendY + 10);
 
     // Legend items
     const legendItems = [
-      { color: '#22c55e', label: 'Zone A: Easily Visible' },
-      { color: '#eab308', label: 'Zone B: Visible (Perfect Conditions)' },
-      { color: '#f97316', label: 'Zone C: Optical Aid Required' },
-      { color: '#ef4444', label: 'Zone D: Not Visible' },
+      { color: '#22c55e', label: isRTL ? 'منطقة A: مرئي بسهولة' : 'Zone A: Easily Visible' },
+      { color: '#eab308', label: isRTL ? 'منطقة B: مرئي (ظروف مثالية)' : 'Zone B: Visible (Perfect Conditions)' },
+      { color: '#f97316', label: isRTL ? 'منطقة C: يحتاج تلسكوب' : 'Zone C: Optical Aid Required' },
+      { color: '#ef4444', label: isRTL ? 'منطقة D: غير مرئي' : 'Zone D: Not Visible' },
     ];
 
-    ctx.font = '11px Inter, sans-serif';
+    ctx.font = isRTL ? '12px Inter, sans-serif' : '11px Inter, sans-serif'; // Slightly larger for Arabic
     ctx.textAlign = 'left';
     legendItems.forEach((item, i) => {
       const itemY = legendY + 32 + i * 18;
@@ -388,7 +395,7 @@ export default function Home() {
     ctx.fillStyle = '#71717a';
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
-    ctx.fillText(`${criterion.charAt(0).toUpperCase() + criterion.slice(1)} Criterion`, W - 24, H - footerHeight / 2);
+    ctx.fillText(`${criterionText} ${isRTL ? 'معيار' : 'Criterion'}`, W - 24, H - footerHeight / 2);
 
     // Convert to blob and download
     canvas.toBlob((blob) => {
