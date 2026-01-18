@@ -388,7 +388,7 @@ export default function Home() {
       ctx.textAlign = 'right';
       ctx.fillText(titleText, legendX + legendW - 12, legendY + 10);
 
-      ctx.font = '10px Cairo, sans-serif';
+      ctx.font = '11px Cairo, sans-serif';
       ctx.fillStyle = '#71717a';
       ctx.textAlign = 'left';
       ctx.fillText(criterionTextLabel, legendX + 12, legendY + 10);
