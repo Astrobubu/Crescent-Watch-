@@ -12,13 +12,20 @@ from skyfield.framelib import itrs
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
+import os
+
 app = FastAPI(title="Crescent Watch (Vectorized)")
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# Serve Next.js frontend if built (Priority)
+if os.path.exists("frontend/out"):
+    app.mount("/", StaticFiles(directory="frontend/out", html=True), name="frontend")
+else:
+    # Fallback to legacy static if frontend build missing
+    app.mount("/static", StaticFiles(directory="static"), name="static")
 
-@app.get("/")
-def home():
-    return FileResponse("static/index.html")
+    @app.get("/")
+    def home():
+        return FileResponse("static/index.html")
 
 app.add_middleware(
     CORSMiddleware,
