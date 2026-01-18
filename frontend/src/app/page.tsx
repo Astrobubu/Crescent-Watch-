@@ -366,6 +366,7 @@ export default function Home() {
     const legendW = 280;
     const legendH = 110;
     // Position: LTR -> Right, RTL -> Left
+    const legendX = isRTL ? 20 : W - legendW - 20;
     const legendY = H - footerHeight - 120;
 
     // Legend background
