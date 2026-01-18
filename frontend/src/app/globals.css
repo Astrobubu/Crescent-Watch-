@@ -133,6 +133,8 @@
 
 ::-webkit-scrollbar-button {
   display: none;
+  width: 0;
+  height: 0;
 }
 
 ::-webkit-scrollbar-track {
@@ -143,7 +145,8 @@
 ::-webkit-scrollbar-thumb {
   background: var(--border);
   border-radius: 9999px;
-  border: 4px solid transparent; /* Creates padding effect */
+  border: 4px solid transparent;
+  /* Creates padding effect */
   background-clip: content-box;
 }
 
