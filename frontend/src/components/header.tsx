@@ -56,30 +56,30 @@ export function Header() {
             {/* About Dialog */}
             <Dialog open={aboutOpen} onOpenChange={setAboutOpen}>
                 <DialogContent className="sm:max-w-md bg-card border-border text-foreground">
-                    <DialogHeader>
-                        <DialogTitle className="text-xl text-foreground">{t('app.title')}</DialogTitle>
-                        <DialogDescription className="text-muted-foreground">
+                    <DialogHeader className="text-center sm:text-center">
+                        <DialogTitle className="text-xl text-foreground text-center">{t('app.title')}</DialogTitle>
+                        <DialogDescription className="text-muted-foreground text-center">
                             {t('app.description')}
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
-                        <div>
+                        <div className="text-center">
                             <h4 className="text-sm font-medium text-foreground mb-2">{t('about.calculations')}</h4>
                             <p className="text-sm text-muted-foreground leading-relaxed">
                                 {t('about.calculations_desc')}
                             </p>
                         </div>
 
-                        <div>
+                        <div className="text-center">
                             <h4 className="text-sm font-medium text-foreground mb-2">{t('about.credits')}</h4>
-                            <ul className="text-sm text-muted-foreground space-y-2">
-                                <li className="flex items-start gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-violet-500 mt-1.5 shrink-0" />
+                            <ul className="text-sm text-muted-foreground space-y-2 flex flex-col items-center">
+                                <li className="flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-violet-500 shrink-0" />
                                     <span>{t('about.credit_skyfield')}</span>
                                 </li>
-                                <li className="flex items-start gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-violet-500 mt-1.5 shrink-0" />
+                                <li className="flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-violet-500 shrink-0" />
                                     <span>{t('about.credit_d3')}</span>
                                 </li>
                             </ul>
