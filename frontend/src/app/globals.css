@@ -177,3 +177,8 @@
 [dir="rtl"] * {
   font-family: var(--font-cairo), ui-sans-serif, system-ui, sans-serif !important;
 }
+
+/* Slightly bigger font for Arabic */
+[dir="rtl"] {
+  font-size: 105%;
+}

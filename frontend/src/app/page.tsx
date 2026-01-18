@@ -363,7 +363,18 @@ export default function Home() {
     ctx.stroke();
 
     // Legend title & Criterion
-    ctx.font = isRTL ? 'bold 12px Cairo, sans-serif' : 'bold 12px Inter, sans-serif';
+    ctx.font = isRTL ? 'bold 13px Cairo, sans-serif' : 'bold 12px Inter, sans-serif'; // Bigger
+    ctx.fillStyle = '#a1a1aa';
+    ctx.textBaseline = 'top';
+
+    // ... (lines omitted for brevity, logic remains same)
+
+    // Update fonts in loop and badge
+    // We will do this via separate chunks if needed or just trust the logic
+    // Actually I'll just update the font definitions in place if I can match them.
+    // But duplicate logic prevents "Find".
+    // I will use MultiReplace to target specific font lines.
+
     ctx.fillStyle = '#a1a1aa';
     ctx.textBaseline = 'top';
 
@@ -400,7 +411,7 @@ export default function Home() {
       { color: '#ef4444', label: isRTL ? 'منطقة D: غير مرئي' : 'Zone D: Not Visible' },
     ];
 
-    ctx.font = isRTL ? '12px Cairo, sans-serif' : '11px Inter, sans-serif';
+    ctx.font = isRTL ? '13px Cairo, sans-serif' : '11px Inter, sans-serif';
 
     legendItems.forEach((item, i) => {
       const itemY = legendY + 32 + i * 18;
