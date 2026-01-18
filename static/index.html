@@ -1,0 +1,1145 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Crescent Visibility</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-main: #e0e0e0;
+            --text-dim: #a0a0a0;
+            --primary: #bb86fc;
+            --border: #333;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden;
+        }
+
+        #app {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        canvas#mapCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: #0a1628;
+            /* Ocean Color */
+        }
+
+        #controls {
+            position: absolute;
+            top: 60px;
+            /* Moved down to make room for toggle */
+            left: 20px;
+            width: 320px;
+            max-width: calc(100vw - 40px);
+            max-height: calc(100vh - 80px);
+            /* prevent cut-off at bottom */
+            background-color: rgba(30, 30, 30, 0.95);
+            padding: 20px;
+            border-radius: 12px;
+            z-index: 1000;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            overflow-y: auto;
+        }
+
+        h1 {
+            margin: 0 0 20px 0;
+            font-size: 1.1rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            color: var(--text-main);
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            color: var(--text-dim);
+            font-size: 0.7rem;
+            margin-bottom: 6px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            background: #2c2c2c;
+            border: 1px solid #333;
+            color: #fff;
+            padding: 8px 10px;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: var(--primary);
+        }
+
+
+
+        #controls.hidden {
+            display: none;
+            /* Just hide it completely */
+        }
+
+
+
+        button#go:hover {
+            background-color: #a370f7;
+        }
+
+        button#go:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+
+        /* Adjust input styles for consistency */
+        input[type="date"],
+        input[type="number"],
+        select,
+        button {
+            width: 100%;
+            padding: 8px;
+            background: #2c2c2c;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: #fff;
+            font-family: inherit;
+        }
+
+        #status {
+            display: block;
+            margin-top: 10px;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-align: center;
+            min-height: 1.2em;
+            /* Prevent Layout Shift */
+        }
+
+        #toggle-sidebar {
+            position: fixed;
+            top: 15px;
+            /* Top Left */
+            left: 20px;
+            width: 40px;
+            height: 40px;
+            z-index: 9999;
+            /* Always on top */
+            background: #1e1e1e;
+            border: 1px solid var(--border);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 8px;
+            /* Softer look */
+            transition: all 0.2s;
+            font-size: 1.2rem;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        #toggle-sidebar:active {
+            transform: scale(0.95);
+            background: #333;
+        }
+
+        #toggle-sidebar:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #000;
+        }
+
+        #cursor-coords {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            /* Center horizontally */
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            pointer-events: none;
+            z-index: 50;
+            /* Ensure it's above map but below controls if they overlap */
+        }
+
+        /* Removed dependent selector as it's now always centered */
+
+        /* Simulation Overlay (Backdrop) */
+        #simulation-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            /* Dimmed backdrop */
+            z-index: 5000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Modal Container */
+        #sim-modal {
+            position: relative;
+            width: 90vw;
+            height: 85vh;
+            background: #000;
+            border: 1px solid #444;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+        }
+
+        #sim-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            /* Flex grow to fill available space */
+            flex: 1;
+        }
+
+        #sim-controls {
+            /* Now part of the modal flow or absolutely positioned within modal */
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 600px;
+            background: rgba(20, 20, 20, 0.9);
+            border: 1px solid #555;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            color: #ccc;
+        }
+
+        #sim-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 2rem;
+            cursor: pointer;
+            z-index: 5001;
+        }
+
+        .sim-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Pin Marker */
+        #pin {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: red;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            display: none;
+            border: 2px solid white;
+            box-shadow: 0 0 10px black;
+            z-index: 40;
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 16px 0;
+        }
+
+        .legend {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+        }
+
+        .swatch {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="app">
+        <canvas id="mapCanvas"></canvas>
+        <div id="pin"></div>
+        <button id="toggle-sidebar" onclick="toggleSidebar()">☰</button>
+        <div id="cursor-coords">Lat: 0.00, Lon: 0.00</div>
+
+        <div id="simulation-overlay">
+            <div id="sim-modal">
+                <button id="sim-close" onclick="closeSimulation()">×</button>
+                <div id="sim-loading"
+                    style="display:none; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:white;">
+                    Loading Simulation...</div>
+                <div id="sim-error"
+                    style="display:none; position:absolute; top:50%; left:50%; width: 80%; text-align: center; transform:translate(-50%,-50%); color:red; background:rgba(0,0,0,0.8); padding:20px;">
+                </div>
+                <canvas id="sim-canvas"></canvas>
+                <div id="sim-controls">
+                    <div class="sim-row">
+                        <span>Time Offset: <span id="sim-time-val">0</span> min</span>
+                        <input type="range" id="sim-time" min="0" max="60" value="0" step="1">
+                    </div>
+                    <div class="sim-row">
+                        <label style="display:inline-flex; gap:10px; align-items:center;">
+                            <input type="checkbox" id="sim-buildings" checked>
+                            Show Context
+                        </label>
+                        <div id="sim-meta" style="font-size:0.8em; text-align:right;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="controls">
+            <h1>Crescent Visibility</h1>
+
+            <div class="form-group">
+                <label for="date">Observation Date</label>
+                <input id="date" type="date" />
+            </div>
+
+            <div class="row form-group">
+                <div class="col">
+                    <label for="step">Grid Step (°)</label>
+                    <input id="step" type="number" value="2" min="0.5" max="10" step="0.5" />
+                </div>
+                <div class="col">
+                    <label for="eval_time">Eval Time</label>
+                    <select id="eval_time">
+                        <option value="sunset" selected>Sunset</option>
+                        <option value="best">Best (Tb)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="projection">Map Projection</label>
+                <select id="projection">
+                    <option value="equirect" selected>Standard (Equirectangular)</option>
+                    <option value="gallpeters">Gall-Peters (Equal Area)</option>
+                </select>
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="include_polar" />
+                <label for="include_polar">Include Polar Regions (> 60°)</label>
+            </div>
+
+            <div class="form-group">
+                <label for="opacity">Overlay Opacity</label>
+                <input type="range" id="opacity" min="0" max="1" step="0.1" value="0.8" />
+            </div>
+
+            <button id="go">Generate Map</button>
+            <div id="status">Ready</div>
+
+            <div class="divider"></div>
+
+            <label>Legend (Odeh Criterion)</label>
+            <div class="legend">
+                <div class="legend-item"><span class="swatch" style="background:#2ecc71"></span>A: Easily Visible</div>
+                <div class="legend-item"><span class="swatch" style="background:#f1c40f"></span>B: Could be Seen</div>
+                <div class="legend-item"><span class="swatch" style="background:#e67e22"></span>C: Optical Aid</div>
+                <div class="legend-item"><span class="swatch" style="background:#e74c3c"></span>D: Not Visible</div>
+            </div>
+        </div>
+    </div>
+
+    </div>
+
+    <script>
+        // Global Toggle Function (Robust)
+        window.toggleSidebar = function () {
+            const c = document.getElementById('controls');
+            if (c) {
+                c.classList.toggle('hidden');
+                // Trigger resize
+                setTimeout(() => {
+                    window.dispatchEvent(new Event('resize'));
+                }, 50);
+            }
+        };
+
+        // === Configuration ===
+        const COLORS = {
+            green: '#2ecc71',
+            yellow: '#f1c40f',
+            orange: '#e67e22',
+            red: '#e74c3c',
+            ocean: '#0a1628',
+            land: '#162436', /* Slightly lighter than ocean */
+            grid: 'rgba(255,255,255,0.1)',
+            text: 'rgba(255,255,255,0.5)',
+            border: '#3a506b'
+        };
+
+        // World Map Data URL (Natural Earth 110m via jsdelivr/github)
+        const WORLD_DATA_URL = 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_land.geojson';
+
+        // State
+        let canvas, ctx;
+        let currentData = null;
+        let worldData = null;
+        let currentMaxLat = 60;
+
+        // Simulation State
+        let simData = null;
+        let simTimeOffset = 0;
+        let showBuildings = true;
+        let simCanvas, simCtx;
+
+        // === Initialization ===
+        function init() {
+            canvas = document.getElementById('mapCanvas');
+            ctx = canvas.getContext('2d');
+
+            // Initial Resize
+            resizeCanvas();
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+                draw();
+            });
+
+            // Initial Setup
+            setToday();
+
+            // Event Listeners
+            document.getElementById('go').addEventListener('click', loadData);
+            document.getElementById('projection').addEventListener('change', draw);
+            document.getElementById('opacity').addEventListener('input', draw);
+
+            // Toggle listener removed (handled by onclick)
+
+            // Mouse Move for Coords
+            canvas.addEventListener('mousemove', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const W = canvas.width;
+                const H = canvas.height;
+                const projType = document.getElementById('projection').value;
+
+                // Inverse Projection
+                // p.x = (lon + 180) * (W / 360) => lon = (p.x / (W/360)) - 180
+                let lon = (x / (W / 360)) - 180;
+
+                let lat;
+                if (projType === 'gallpeters') {
+                    // y = H/2 - (H/2) * sin(lat)
+                    // (H/2 - y) / (H/2) = sin(lat)
+                    // 1 - 2y/H = sin(lat)
+                    const sinLat = 1 - (2 * y) / H;
+                    // Clamp for safety
+                    const clamped = Math.max(-1, Math.min(1, sinLat));
+                    lat = Math.asin(clamped) * (180 / Math.PI);
+                } else {
+                    // y = H/2 - (lat/90)*(H/2)
+                    // (H/2 - y)/(H/2) = lat/90
+                    // lat = 90 * (1 - 2y/H)
+                    lat = 90 * (1 - (2 * y) / H);
+                }
+
+                const disp = document.getElementById('cursor-coords');
+                disp.textContent = `Lat: ${lat.toFixed(2)}, Lon: ${lon.toFixed(2)}`;
+            });
+
+            // Click Map to Simulation
+            canvas.addEventListener('click', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const W = canvas.width;
+                const H = canvas.height;
+                const projType = document.getElementById('projection').value;
+
+                // --- Inverse Logic (Copied/Shared) ---
+                let lon = (x / (W / 360)) - 180;
+                let lat;
+                if (projType === 'gallpeters') {
+                    const sinLat = 1 - (2 * y) / H;
+                    const clamped = Math.max(-1, Math.min(1, sinLat));
+                    lat = Math.asin(clamped) * (180 / Math.PI);
+                } else {
+                    lat = 90 * (1 - (2 * y) / H);
+                }
+
+                // Update Pin
+                const pin = document.getElementById('pin');
+                pin.style.left = x + 'px';
+                pin.style.top = y + 'px';
+                pin.style.display = 'block';
+
+                // Open Simulation
+                openSimulation(lat, lon);
+            });
+
+            // Sim Controls
+            document.getElementById('sim-time').addEventListener('input', (e) => {
+                simTimeOffset = parseInt(e.target.value);
+                document.getElementById('sim-time-val').textContent = simTimeOffset;
+                drawSimulation();
+            });
+            document.getElementById('sim-buildings').addEventListener('change', (e) => {
+                showBuildings = e.target.checked;
+                drawSimulation();
+            });
+
+            simCanvas = document.getElementById('sim-canvas');
+            simCtx = simCanvas.getContext('2d');
+
+            // Resize Sim Canvas (Match container)
+            function resizeSim() {
+                if (simCanvas && simCanvas.parentElement) {
+                    const rect = simCanvas.parentElement.getBoundingClientRect();
+                    simCanvas.width = rect.width;
+                    simCanvas.height = rect.height;
+                    if (simData) drawSimulation();
+                }
+            }
+            window.addEventListener('resize', resizeSim);
+            // Delay initial resize until open?
+
+            // Load World Map
+            fetch(WORLD_DATA_URL)
+                .then(res => res.json())
+                .then(data => {
+                    worldData = data; // GeoJSON FeatureCollection
+                    draw();
+                    // NO auto-load here
+                })
+                .catch(err => {
+                    console.error("World map load error:", err);
+                    draw();
+                });
+        }
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        // === Projection Math ===
+        // All projections convert (lat, lon) -> (x, y) relative to screen w, h
+        // Returns normalized X [-1, 1], Y [-1, 1] relative to center?
+        // Let's stick to pixel coordinates 0..W, 0..H
+
+        function project(lat, lon, W, H, maxLat, type) {
+            // X is always linear for these cylindrical projections
+            const x = ((lon + 180) / 360) * W;
+
+            let y_norm = 0; // -0.5 (South) to 0.5 (North)
+
+            if (type === 'gallpeters') {
+                // Gall-Peters: y = sin(lat)
+                const sLat = Math.sin(lat * Math.PI / 180);
+                const sMax = Math.sin(maxLat * Math.PI / 180);
+                y_norm = sLat / (2 * sMax); // Scaled to fit maxLat
+            } else {
+                // Equirectangular: y = lat
+                y_norm = lat / (2 * maxLat);
+            }
+
+            // Canvas Y is inverted (0 at top)
+            const y = H / 2 - (y_norm * H);
+            return { x, y };
+        }
+
+        // === Drawing Loop ===
+        function draw() {
+            const W = canvas.width;
+            const H = canvas.height;
+            const projType = document.getElementById('projection').value;
+            // ALWAYS show full 90 degree range
+            const viewMaxLat = 90;
+            // Data clipping might still use meta max_lat, but Viewport is fixed
+            const dataMaxLat = currentData ? (currentData.meta.max_lat || 60) : 60;
+
+            // 1. Clear
+            ctx.fillStyle = COLORS.ocean;
+            ctx.fillRect(0, 0, W, H);
+
+            // 2. Overlay (Render FIRST so land can be drawn on top? No, overlay is transparency)
+            // Actually, usually: Ocean -> Land -> Overlay -> Grid
+
+            // 2. Draw Landmasses (GeoJSON)
+            if (worldData && worldData.features) {
+                ctx.fillStyle = COLORS.land;
+                ctx.strokeStyle = COLORS.border;
+                ctx.lineWidth = 1;
+
+                ctx.beginPath();
+                for (const feature of worldData.features) {
+                    const geometry = feature.geometry;
+                    if (geometry.type === 'Polygon') {
+                        drawPolygon(geometry.coordinates, W, H, viewMaxLat, projType);
+                    } else if (geometry.type === 'MultiPolygon') {
+                        for (const coords of geometry.coordinates) {
+                            drawPolygon(coords, W, H, viewMaxLat, projType);
+                        }
+                    }
+                }
+                ctx.fill();
+                ctx.stroke();
+            }
+
+            // 3. Visibility Overlay
+            if (currentData) {
+                // Pass viewMaxLat for projection, but data is clipped by logic inside
+                drawVisibility(currentData, W, H, viewMaxLat, projType);
+            }
+
+            // 4. Graticule & Labels
+            drawGraticule(W, H, viewMaxLat, projType);
+        }
+
+        function drawPolygon(rings, W, H, maxLat, projType) {
+            // GeoJSON Polygon is array of rings: [ [ [lon, lat], ... ], ... ]
+            // First ring is exterior, others are holes.
+
+            for (const ring of rings) {
+                let first = true;
+                for (const [lon, lat] of ring) {
+                    // Basic clipping
+                    if (Math.abs(lat) > maxLat + 5) continue;
+
+                    const p = project(lat, lon, W, H, maxLat, projType);
+                    if (first) { ctx.moveTo(p.x, p.y); first = false; }
+                    else ctx.lineTo(p.x, p.y);
+                }
+            }
+        }
+
+        // --- Visibility Logic ---
+        function drawVisibility(data, W, H, maxLat, projType) {
+            const opacity = parseFloat(document.getElementById('opacity').value);
+            ctx.globalAlpha = opacity;
+
+            const step = data.meta.step_deg || 2;
+            drawGrid(data, W, H, maxLat, projType, step);
+
+            ctx.globalAlpha = 1.0;
+        }
+
+        function drawGrid(data, W, H, maxLat, projType, step) {
+            const cellW = (step / 360) * W;
+            // Pad slightly to remove borders (anti-aliasing fix)
+            const pad = 0.6;
+
+            for (const pt of data.points) {
+                if (Math.abs(pt.lat) > maxLat) continue;
+
+                const center = project(pt.lat, pt.lon, W, H, maxLat, projType);
+                const north = project(pt.lat + step / 2, pt.lon, W, H, maxLat, projType);
+                const south = project(pt.lat - step / 2, pt.lon, W, H, maxLat, projType);
+                const cellH = Math.abs(south.y - north.y);
+
+                ctx.fillStyle = COLORS[pt.color] || COLORS.red;
+                // Ensure overlap
+                ctx.fillRect(center.x - cellW / 2, center.y - cellH / 2, cellW + pad, cellH + pad);
+            }
+        }
+
+        function drawGraticule(W, H, maxLat, projType) {
+            ctx.strokeStyle = COLORS.grid;
+            ctx.fillStyle = COLORS.text;
+            ctx.font = '10px Roboto';
+            ctx.lineWidth = 1;
+
+            // Longitude Lines
+            for (let lon = -180; lon <= 180; lon += 30) {
+                const p1 = project(-maxLat, lon, W, H, maxLat, projType);
+                const p2 = project(maxLat, lon, W, H, maxLat, projType);
+
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y); // Bottom
+                ctx.lineTo(p2.x, p2.y); // Top
+                ctx.stroke();
+
+                // Label
+                if (lon > -180 && lon < 180) {
+                    ctx.textAlign = 'center';
+                    ctx.fillText(`${Math.abs(lon)}°`, p1.x, H - 5);
+                }
+            }
+
+            // Latitude Lines
+            // Draw every 15 degrees always since we show full range
+            const latStep = 15;
+            for (let lat = -90; lat <= 90; lat += latStep) {
+                // Draw line across width
+                const pLeft = project(lat, -180, W, H, maxLat, projType);
+                const pRight = project(lat, 180, W, H, maxLat, projType);
+
+                ctx.beginPath();
+                ctx.moveTo(0, pLeft.y);
+                ctx.lineTo(W, pRight.y);
+                ctx.stroke();
+
+                // Label on RIGHT side
+                if (lat !== -90 && lat !== 90) { // Don't label poles if too crowded
+                    ctx.textAlign = 'right';
+                    ctx.fillText(`${lat}°`, W - 10, pLeft.y + 3);
+                }
+            }
+        }
+
+        function setToday() {
+            const now = new Date();
+            const yyyy = now.getUTCFullYear();
+            const mm = String(now.getUTCMonth() + 1).padStart(2, '0');
+            const dd = String(now.getUTCDate()).padStart(2, '0');
+            document.getElementById('date').value = `${yyyy}-${mm}-${dd}`;
+        }
+
+        // === API ===
+        async function loadData() {
+            const status = document.getElementById('status');
+            const btn = document.getElementById('go');
+
+            try {
+                btn.disabled = true;
+                status.textContent = "Calculating...";
+
+                const dt = document.getElementById('date').value;
+                const step = document.getElementById('step').value;
+                const eval_time = document.getElementById('eval_time').value;
+                const include_polar = document.getElementById('include_polar').checked;
+                const [y, m, d] = dt.split('-').map(Number);
+
+                const url = `/visibility?y=${y}&m=${m}&d=${d}&step_deg=${step}&eval_time=${eval_time}&date_mode=local&include_polar=${include_polar}`;
+
+                const t0 = performance.now();
+                const res = await fetch(url);
+
+                if (!res.ok) throw new Error(await res.text());
+                const data = await res.json();
+
+                currentData = data;
+
+                draw();
+
+                status.textContent = `${data.points.length} pts in ${data.meta.calc_time_ms}ms`;
+
+            } catch (err) {
+                console.error(err);
+                status.textContent = "Error";
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function openSimulation(lat, lon) {
+            const dt = document.getElementById('date').value;
+            const [y, m, d] = dt.split('-').map(Number);
+
+            const overlay = document.getElementById('simulation-overlay');
+            overlay.style.display = 'flex'; // Flex for centering
+
+            // Initial Size
+            const canvas = document.getElementById('sim-canvas');
+            const modal = document.getElementById('sim-modal');
+            canvas.width = modal.clientWidth;
+            canvas.height = modal.clientHeight;
+
+            document.getElementById('sim-loading').style.display = 'block';
+            document.getElementById('sim-error').style.display = 'none';
+            document.getElementById('sim-canvas').style.opacity = '0.3'; // Dim old
+
+            try {
+                const res = await fetch(`/simulation?lat=${lat}&lon=${lon}&y=${y}&m=${m}&d=${d}`);
+                if (!res.ok) {
+                    const errData = await res.json();
+                    throw new Error(errData.error || res.statusText);
+                }
+                simData = await res.json();
+
+                // Success
+                document.getElementById('sim-loading').style.display = 'none';
+                document.getElementById('sim-canvas').style.opacity = '1';
+
+                // Reset
+                simTimeOffset = 0;
+                document.getElementById('sim-time').value = 0;
+
+                // Build Meta text
+                document.getElementById('sim-meta').textContent =
+                    `Sunset: ${simData.meta.sunset_iso.split('T')[1].substr(0, 5)} UTC`;
+
+                drawSimulation();
+
+            } catch (e) {
+                console.error(e);
+                document.getElementById('sim-loading').style.display = 'none';
+                const errDiv = document.getElementById('sim-error');
+                errDiv.style.display = 'block';
+                errDiv.textContent = `Error: ${e.message}. Try another location or date.`;
+            }
+        }
+
+        window.closeSimulation = function () {
+            document.getElementById('simulation-overlay').style.display = 'none';
+        };
+
+        function drawSimulation() {
+            if (!simData || !simData.trajectory) return;
+
+            const W = simCanvas.width;
+            const H = simCanvas.height;
+            simCtx.clearRect(0, 0, W, H);
+
+            // 1. Get current moment data
+            // Identify closest minute point
+            // data is every 2 mins? data resolution is 2 mins from backend.
+            // Find closest
+            const frame = simData.trajectory.find(p => p.time_offset_min >= simTimeOffset) || simData.trajectory[simData.trajectory.length - 1];
+
+            // 2. Sky Gradient (based on Sun Alt)
+            // Sun Alt < 0 usually. -6 is civil twilight, -12 nautical.
+            // Deep blue: -18, Orange/Red: -3 to -6.
+            const sunAlt = frame.sun_alt;
+
+            const grad = simCtx.createLinearGradient(0, 0, 0, H);
+            if (sunAlt > 0) {
+                grad.addColorStop(0, '#87CEEB'); // Day
+                grad.addColorStop(1, '#FFFFFF');
+            } else if (sunAlt > -6) {
+                grad.addColorStop(0, '#203A43');
+                grad.addColorStop(0.5, '#745448'); // Dusk
+                grad.addColorStop(1, '#FEBB69'); // Sunset glow
+            } else if (sunAlt > -12) {
+                grad.addColorStop(0, '#0F2027');
+                grad.addColorStop(1, '#2C5364'); // Nautical
+            } else {
+                grad.addColorStop(0, '#000000');
+                grad.addColorStop(1, '#0f2027'); // Night
+            }
+            simCtx.fillStyle = grad;
+            simCtx.fillRect(0, 0, W, H);
+
+            // 3. Horizon
+            const horizonY = H * 0.7; // Lower third
+
+            // 4. Coordinates Mapping (Azimuth/Alt -> X/Y)
+            // FOV: 60 degrees width? 35mm lens is ~54 deg hort.
+            const FOV = 60;
+            const centerAz = frame.sun_az; // Center view on SUN initially? Or Sunset point?
+            // Let's Center on West (270) or the Sun's azimuth at sunset?
+            // Better: Center on the Sun's current Azimuth
+
+            function toScreen(az, alt) {
+                // Wrap az delta -180 to 180
+                let dAz = az - centerAz;
+                while (dAz > 180) dAz -= 360;
+                while (dAz < -180) dAz += 360;
+
+                const x = W / 2 + (dAz / (FOV / 2)) * (W / 2);
+                const y = horizonY - (alt / (FOV * (H / W))) * (W / 2); // Maintain Aspect Ratio approx
+                // Simplify Y: deg per pixel = FOV / W.
+                const pxPerDeg = W / FOV;
+                const screenY = horizonY - (alt * pxPerDeg);
+                return { x, y, pxPerDeg };
+            }
+
+            // Draw Sun (Glow)
+            const sunPos = toScreen(frame.sun_az, frame.sun_alt);
+            // Sun Glow
+            const sunRad = 100;
+            const sunGrad = simCtx.createRadialGradient(sunPos.x, sunPos.y, 10, sunPos.x, sunPos.y, sunRad * 2);
+            sunGrad.addColorStop(0, 'rgba(255, 100, 50, 0.4)');
+            sunGrad.addColorStop(1, 'rgba(255, 100, 50, 0)');
+            simCtx.fillStyle = sunGrad;
+            simCtx.fillRect(0, 0, W, H);
+
+            // Draw Moon
+            const moonPos = toScreen(frame.moon_az, frame.moon_alt);
+
+            // Moon Size (exaggerated slightly for visibility? Real is 0.5 deg)
+            const moonScale = 3; // 3x exaggerated
+            const realRadiusPx = (0.25 * moonPos.pxPerDeg) * moonScale;
+
+            // Draw Moon Body (Earthshine)
+            simCtx.save();
+            simCtx.translate(moonPos.x, moonPos.y);
+            // Rotate so Lit Limb is pointing RIGHT (0 rads in Canvas)
+            // frame.tilt is angle from Zenith? 
+            // We need to verify Skyfield tilt. 
+            // Usually position angle.
+            // Let's assume tilt is "Angle of Sun vector relative to Moon, ccw from Up".
+            // Canvas 0 is Right. Up is -90.
+            // So if tilt is 0 (Up), we want rotation -90.
+            simCtx.rotate((frame.tilt - 90) * Math.PI / 180);
+
+            // 1. Earthshine (The dark part, faintly visible)
+            simCtx.beginPath();
+            simCtx.arc(0, 0, realRadiusPx, 0, Math.PI * 2);
+            simCtx.fillStyle = 'rgba(20, 20, 30, 0.9)'; // Dark blue-grey
+            simCtx.fill();
+
+            // 2. Lit Crescent
+            // We draw the lit half-sphere projected.
+            // Phase k (0..1). 
+            // Terminator is an ellipse with semi-minor axis b = r * cos(phase_angle).
+            // Width of lit slice = 2r * k along diameter? 
+            // Standard alg:
+            // Outer limb is always a semi-circle (radius r).
+            // Inner terminator is an ellipse (radius r, short_radius b).
+            // b varies from r (Full) to -r (Full).
+            // For Crescent (k < 0.5), terminator curves same direction as limb.
+
+            const k = frame.illumination;
+            const r = realRadiusPx;
+
+            simCtx.beginPath();
+            // Outer Limb (Always valid semi-circle on the "Sun Check" side)
+            // We rotated so Sun is to the Right (0).
+            simCtx.arc(0, 0, r, -Math.PI / 2, Math.PI / 2);
+
+            // Inner Terminator (Ellipse arc)
+            // Bezier approximation or scale?
+            // Easy way: scale X.
+            // Terminator X goes from 0 to -r (Waxing/Waning).
+            // Actually simpler:
+            // The terminator passes through (0, -r) and (0, r).
+            // The X offset of the terminator at Y=0 is determined by phase.
+            // X_term = r * (2*k - 1). 
+            // if k=0 (New), X=-r. if k=0.5 (Quarter), X=0. if k=1 (Full), X=r.
+
+            // We draw the ellipse arc closing the shape.
+            // We need to move FROM (0, r) TO (0, -r) via the terminator curve.
+            // Ellipse center (0,0), radii (abs(X_term), r).
+            // Fix: Invert logic. Sun on Right. 
+            // k=0 (New) -> Terminator at Right Edge (+r). Area=0.
+            // k=1 (Full) -> Terminator at Left Edge (-r). Area=Full.
+            // Old was r * (2k - 1) which is -r at k=0. Wrong.
+            const xTerm = -r * (2 * k - 1);
+
+            // Canvas doesn't have simple 'ellipseTo', but we can use bezier or logic.
+            // Or use scale() trick.
+            simCtx.save();
+            simCtx.scale(Math.abs(2 * k - 1), 1);
+            if (k < 0.5) {
+                // Crescent (Horns point away from Sun). 
+                // We drawn the outer arc -PI/2 to PI/2 (Right side).
+                // Terminator should curve inwards (Left).
+                // BUT we are filling the LIT part.
+                // Lit part is the crescent.
+                // The terminator bound is on the LEFT.
+                // So we need to subtract the unlit part?
+                // Visual Compositing approach is easier:
+                // 1. Draw pure white circle.
+                // 2. Draw black ellipse to cover the shadow?
+            }
+            simCtx.restore();
+
+            // -- simpler composite approach --
+            simCtx.fillStyle = '#FFF';
+
+            // For drawing the terminator curve with Bezier:
+            // Start point: Bottom of arc (0, r)? No, Arc goes -PI/2 (Up) to PI/2 (Down).
+            // So current pen is at (0, r) (Bottom).
+            // We need to Curve back to (0, -r) (Top).
+            // Control points should pull towards xTerm.
+
+            if (k < 0.5) {
+                // Crescent
+                simCtx.beginPath();
+                simCtx.arc(0, 0, r, -Math.PI / 2, Math.PI / 2); // Outer Right Semicircle (Top->Right->Bottom)
+                // Pen is at (0, r).
+                // Bezier back to (0, -r).
+                // Control points (xTerm, r) and (xTerm, -r)? Or (xTerm, r/2)...
+                // Bezier approximation of half-ellipse.
+                // xTerm is positive (Right side).
+                simCtx.bezierCurveTo(xTerm, r / 2, xTerm, -r / 2, 0, -r);
+                simCtx.fill();
+            } else {
+                // Gibbous (More than half)
+                simCtx.beginPath();
+                simCtx.arc(0, 0, r, -Math.PI / 2, Math.PI / 2); // Right Half
+                simCtx.fill();
+
+                // Plus the left bulge (which is the terminator curving Left)
+                // xTerm is negative.
+                simCtx.beginPath();
+                // Draw the "missing" half ellipse
+                // We can use ellipse()
+                simCtx.ellipse(0, 0, Math.abs(xTerm), r, 0, -Math.PI / 2, Math.PI / 2);
+                simCtx.fill();
+            }
+
+            // Glow
+            simCtx.shadowColor = "white";
+            simCtx.shadowBlur = 10;
+            simCtx.stroke(); // trigger shadow
+            simCtx.shadowBlur = 0;
+
+            simCtx.restore();
+
+            simCtx.fillStyle = 'white';
+            simCtx.font = '12px Roboto';
+            const pct = (frame.illumination * 100).toFixed(1);
+            // Labels
+            simCtx.textAlign = 'left';
+            simCtx.fillStyle = '#eee';
+            simCtx.fillText(`Moon Alt: ${frame.moon_alt.toFixed(1)}°`, moonPos.x + 15, moonPos.y - 5);
+            simCtx.fillStyle = '#bbb';
+            simCtx.font = '11px Roboto';
+            simCtx.fillText(`Illum: ${pct}%`, moonPos.x + 15, moonPos.y + 10);
+
+            // --- Angular Guides (Requested) ---
+            simCtx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            simCtx.lineWidth = 1;
+            simCtx.setLineDash([4, 4]);
+
+            // 1. Altitude Line (Moon to Horizon)
+            // Horizon is at y = horizonY? 
+            // Actually horizonY is geometric horizon. Ground occupies below it.
+            // We draw line from Moon center (moonPos.x, moonPos.y) down to (moonPos.x, horizonY).
+            if (moonPos.y < horizonY) {
+                simCtx.beginPath();
+                simCtx.moveTo(moonPos.x, moonPos.y + realRadiusPx + 5);
+                simCtx.lineTo(moonPos.x, horizonY);
+                simCtx.stroke();
+
+                // Label Alt
+                simCtx.textAlign = 'center';
+                simCtx.fillStyle = '#aaa';
+                simCtx.fillText(`${frame.moon_alt.toFixed(1)}°`, moonPos.x, (moonPos.y + horizonY) / 2);
+            }
+
+            // 2. Elongation Line (Moon to Sun)
+            // SunPos might be off-screen, but coords are valid.
+
+            simCtx.beginPath();
+            simCtx.moveTo(moonPos.x, moonPos.y);
+            simCtx.lineTo(sunPos.x, sunPos.y);
+            simCtx.strokeStyle = 'rgba(255, 215, 0, 0.5)'; // Gold for Sun vector
+            simCtx.stroke();
+
+            // Label Elongation (near Moon)
+            // Vector M->S
+            const dx = sunPos.x - moonPos.x;
+            const dy = sunPos.y - moonPos.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            // Place label 25% of the way to Sun (so it stays on screen usually)
+            const tLabel = 0.25;
+            const lx = moonPos.x + dx * tLabel;
+            const ly = moonPos.y + dy * tLabel;
+
+            simCtx.fillStyle = '#FFD700'; // Gold
+            simCtx.textAlign = 'left';
+            // Save context to rotate text along line? Maybe too fancy/hard to read.
+            // Just simple text.
+            const elDeg = frame.elongation.toFixed(1);
+            simCtx.fillText(`ARCL: ${elDeg}°`, lx + 5, ly);
+
+            // 3. DAZ (Azimuth Difference) - Horizontal Line at Horizon
+            const dAzVal = Math.abs(frame.moon_az - frame.sun_az);
+            if (dAzVal > 0.5) {
+                simCtx.beginPath();
+                simCtx.moveTo(sunPos.x, horizonY - 5);
+                simCtx.lineTo(moonPos.x, horizonY - 5);
+                simCtx.strokeStyle = 'rgba(100, 200, 255, 0.5)';
+                simCtx.stroke();
+
+                simCtx.fillStyle = '#87CEFA';
+                simCtx.textAlign = 'center';
+                simCtx.fillText(`DAZ: ${dAzVal.toFixed(1)}°`, (sunPos.x + moonPos.x) / 2, horizonY - 10);
+            }
+
+            simCtx.setLineDash([]); // Reset
+            simCtx.textAlign = 'left'; // Reset
+
+            // Draw Hand Guide
+            // roughly 10 degrees ~ fist width
+            const px10deg = 10 * moonPos.pxPerDeg;
+            simCtx.strokeStyle = 'rgba(255,255,255,0.3)';
+            simCtx.lineWidth = 2;
+            simCtx.strokeRect(W - px10deg - 20, 20, px10deg, px10deg);
+            simCtx.fillText("~10° (Fist)", W - px10deg - 20, 15);
+
+            // Draw Horizon Ground
+            simCtx.fillStyle = '#050505';
+            simCtx.fillRect(0, horizonY, W, H - horizonY);
+
+            // Buildings
+            if (showBuildings) {
+                // Left Block
+                simCtx.fillRect(0, horizonY - 50, W * 0.15, 600);
+                // Right Block
+                simCtx.fillRect(W * 0.85, horizonY - 40, W * 0.15, 600);
+                // Random little ones
+                simCtx.fillRect(W * 0.2, horizonY - 20, 30, 30);
+                simCtx.fillRect(W * 0.75, horizonY - 30, 20, 50);
+            }
+        }
+
+        // Start
+        init();
+
+    </script>
+</body>
+
+</html>
