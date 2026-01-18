@@ -172,11 +172,8 @@
   scrollbar-color: rgba(161, 161, 170, 0.3) transparent;
 }
 
-/* Force Cairo font for Arabic/RTL */
-[dir="rtl"] body {
-  font-family: var(--font-cairo), sans-serif;
-}
-
-[dir="rtl"] .font-sans {
-  font-family: var(--font-cairo), sans-serif;
+/* Force Cairo font for Arabic/RTL - Aggressive Override */
+[dir="rtl"] body,
+[dir="rtl"] * {
+  font-family: var(--font-cairo), ui-sans-serif, system-ui, sans-serif !important;
 }

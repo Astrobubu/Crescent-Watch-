@@ -19,7 +19,7 @@ export default function Legend({ criterion }: LegendProps) {
     ];
 
     return (
-        <Card className="fixed bottom-4 right-4 z-[1000] bg-card/90 backdrop-blur border-border p-3 shadow-lg">
+        <Card className="fixed bottom-4 right-8 z-[1000] bg-card/90 backdrop-blur border-border p-3 shadow-lg">
             <div className="space-y-2">
                 <div className="flex items-center justify-between gap-4 text-xs text-muted-foreground">
                     <span className="uppercase tracking-wider font-medium">{t('legend.title')}</span>
