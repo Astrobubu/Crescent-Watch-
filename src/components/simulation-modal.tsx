@@ -184,7 +184,8 @@ export default function SimulationModal({
 
         const W = canvas.width;
         const H = canvas.height;
-        const horizonY = H * 0.75;
+        // Adjusted Horizon to 80% to give more sky space per user request ("squished" feel)
+        const horizonY = H * 0.55;
 
         // Sky gradient
         const sunAlt = frame.sunAlt;
@@ -485,23 +486,25 @@ export default function SimulationModal({
 
                 {/* Canvas Area with Responsive Layout - Scrollable content area on mobile */}
                 {/* Desktop: Force min-h to prevent collapse (empty view fix) */}
-                <div className="relative w-full bg-black flex flex-col md:flex-1 md:block md:min-h-[500px] overflow-y-auto md:overflow-hidden" ref={containerRef}>
+                <div className="relative w-full bg-black flex flex-col md:flex-1 md:block md:min-h-[500px] overflow-hidden" ref={containerRef}>
                     {isLoading && (
                         <div className="absolute inset-0 flex items-center justify-center text-white gap-2 z-10 pointer-events-none">
                             <Loader2 className="animate-spin" /> {t.calculating}
                         </div>
                     )}
 
-                    {/* Fixed Height Canvas on Mobile (250px), Full/Absolute on Desktop */}
-                    <div className="relative w-full h-[250px] shrink-0 md:h-full md:absolute md:inset-0">
+                    {/* Mobile: Flex-1 to extend height per user request, min-h-[300px] as base */}
+                    {/* Desktop: Full/Absolute */}
+                    <div className="relative w-full flex-1 min-h-[300px] md:h-full md:absolute md:inset-">
                         <canvas ref={canvasRef} className="block w-full h-full" />
                     </div>
 
-                    {/* Controls Overlay - Stacked Below on Mobile, Overlay on Desktop */}
-                    <div className="relative w-full bg-card text-foreground z-20 md:absolute md:bottom-0 md:left-0 md:right-0 md:bg-black/60 md:backdrop-blur-sm md:text-white md:border-t md:border-white/10 p-4 shrink-0">
-                        <div className="flex flex-col gap-4 max-w-5xl mx-auto">
+                    {/* Controls Overlay - Stacked Below on Mobile (Compact), Overlay on Desktop */}
+                    {/* User requested to "Cut off space" -> Condensed padding and gaps */}
+                    <div className="relative w-full bg-card text-foreground z-20 md:absolute md:bottom-0 md:left-0 md:right-0 md:bg-black/60 md:backdrop-blur-sm md:text-white md:border-t md:border-white/10 p-3 md:p-4 shrink-0">
+                        <div className="flex flex-col gap-4 md:gap-4 max-w-5xl mx-auto">
                             {/* Top row: Time + Slider + Checkbox */}
-                            <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
+                            <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-6">
                                 <div className="flex items-center justify-between">
                                     <div className="font-mono text-xl w-24 text-center md:text-left">{currentTime ? formatTime(currentTime) : '--:--'}</div>
                                     <div className="flex items-center gap-2 md:hidden">
@@ -515,7 +518,7 @@ export default function SimulationModal({
                                     onValueChange={([v]) => setTimeOffset(v)}
                                     max={75}
                                     step={1}
-                                    className="flex-1 py-2"
+                                    className="flex-1 py-1"
                                 />
 
                                 <div className="hidden md:flex items-center gap-2">
@@ -524,8 +527,8 @@ export default function SimulationModal({
                                 </div>
                             </div>
 
-                            {/* Bottom row: Data Grid - Responsive Grid */}
-                            <div className="grid grid-cols-2 md:grid-cols-5 gap-y-3 gap-x-4 text-sm">
+                            {/* Bottom row: Data Grid - Condensed on mobile */}
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-y-2 gap-x-4 text-sm">
                                 <div>
                                     <div className="text-[10px] text-muted-foreground md:text-white/50 uppercase">{t.moonAltitude}</div>
                                     <div className="font-mono">{frame?.moonAlt.toFixed(2)}°</div>
