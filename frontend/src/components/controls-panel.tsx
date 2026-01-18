@@ -205,7 +205,7 @@ export function ControlsPanel({
                         </Popover>
 
                         {/* Hijri Date Display */}
-                        <div className="text-sm text-violet-400 bg-violet-950/30 rounded-md px-3 py-2 border border-violet-900/50 text-center" dir="ltr">
+                        <div className="text-sm text-violet-400 bg-violet-950/30 rounded-md px-3 py-2 border border-violet-900/50 text-center" dir={isRTL ? 'rtl' : 'ltr'}>
                             {isRTL
                                 ? `${hijriDate.day} ${HIJRI_MONTHS_AR[hijriDate.month - 1]} ${hijriDate.year} هـ`
                                 : `${hijriDate.day} ${hijriDate.monthName} ${hijriDate.year} AH`
