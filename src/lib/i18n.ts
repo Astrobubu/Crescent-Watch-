@@ -39,6 +39,7 @@ export interface Translations {
     legendElong: string;
     showBuildings: string;
     showLegend: string;
+    showData: string;
 
     // Visibility zones
     zoneA: string;
@@ -168,6 +169,7 @@ const translations: Record<Locale, Translations> = {
         legendElong: 'Elongation',
         showBuildings: 'Show Buildings',
         showLegend: 'Show Legend',
+        showData: 'Show Data',
 
         zoneA: 'Zone A',
         zoneB: 'Zone B',
@@ -194,7 +196,7 @@ const translations: Record<Locale, Translations> = {
         critOdeh: 'Odeh (2006)',
         critYallop: 'Yallop (1997)',
         critSAAO: 'SAAO (1988)',
-        res05: '0.5° (Ultra High)',
+        res05: '0.5° (Fine)',
         res1: '1° (High)',
         res2: '2° (Medium)',
         res3: '3° (Low)',
@@ -290,6 +292,7 @@ const translations: Record<Locale, Translations> = {
         legendElong: 'الاستطالة',
         showBuildings: 'إظهار المباني',
         showLegend: 'إظهار الدليل',
+        showData: 'إظهار البيانات',
 
         zoneA: 'المنطقة أ',
         zoneB: 'المنطقة ب',

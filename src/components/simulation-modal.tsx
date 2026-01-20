@@ -154,6 +154,7 @@ export default function SimulationModal({
     const containerRef = useRef<HTMLDivElement>(null);
     const [timeOffset, setTimeOffset] = useState(0);
     const [showBuildings, setShowBuildings] = useState(true);
+    const [showOverlay, setShowOverlay] = useState(true);
     const [use24Hour, setUse24Hour] = useState(false);
 
     // Interactive View State
@@ -644,43 +645,10 @@ export default function SimulationModal({
             ctx.restore();
         }
 
-        // Measurements (Line only, NO TEXT)
-        ctx.setLineDash([4, 4]);
-        ctx.lineWidth = 1;
+        // Reset Shadow
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
 
-        if (frame.moonAlt > 0 && moonPos.y < horizonY) {
-            // Angle from ground (Altitude)
-            ctx.strokeStyle = 'rgba(100, 200, 255, 0.7)';
-            ctx.beginPath();
-            ctx.moveTo(moonPos.x, moonPos.y + moonRadius + 10);
-            ctx.lineTo(moonPos.x, horizonY);
-            ctx.stroke();
-
-            // Altitude Text ON the blue line (Midpoint)
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 12px Tajawal, sans-serif';
-            ctx.textAlign = 'right';
-
-            const midY = (moonPos.y + moonRadius + 10 + horizonY) / 2;
-
-            // Draw "Moon Altitude" label and then value on next line? Or just Value?
-            // User requested: "write moon altitude, new line, and the number"
-
-            const labelText = t.moonAltitude;
-            const valueText = formatDMS(frame.moonAlt);
-
-            // Shadow for Contrast
-            ctx.shadowColor = 'rgba(0,0,0,0.8)';
-            ctx.shadowBlur = 4;
-
-            ctx.fillText(labelText, moonPos.x - 8, midY - 6);
-            ctx.font = 'bold 12px Tajawal, sans-serif';
-            ctx.fillText(valueText, moonPos.x - 8, midY + 8);
-
-            // Reset Shadow
-            ctx.shadowColor = 'transparent';
-            ctx.shadowBlur = 0;
-        }
 
         // Ground Gradient (Depth)
         ctx.setLineDash([]);
@@ -871,20 +839,21 @@ export default function SimulationModal({
             }
         }
 
-        // Advanced Details Overlay (Always show if data exists)
-        if (data) {
-            // Helper for Local Time (Approximation using Longitude)
+        // 4. Horizon Labels (Azimuths & Set Times) - REMOVED AS REQUESTED
+        // User requested to remove Moonset/Sunset/Azimuth labels from the "entire map" and put them in the left side panel.
+
+        // Advanced Details Overlay
+        if (showOverlay && data) {
+            // Helper for Local Time
             const formatLocalTime = (isoDateStr: string | null | undefined) => {
                 if (!isoDateStr) return '--';
                 const d = new Date(isoDateStr);
-                const offsetHours = data.meta.lon / 15; // 15 degrees per hour
+                const offsetHours = data.meta.lon / 15;
                 const localDate = new Date(d.getTime() + offsetHours * 3600000);
-
                 const h = localDate.getUTCHours();
                 const m = localDate.getUTCMinutes();
                 const ampm = h >= 12 ? 'PM' : 'AM';
                 const h12 = h % 12 || 12;
-
                 return use24Hour
                     ? `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`
                     : `${h12.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')} ${ampm}`;
@@ -897,10 +866,6 @@ export default function SimulationModal({
             ctx.shadowColor = 'rgba(0,0,0,0.8)';
             ctx.shadowBlur = 4;
 
-            // 1. Consolidated Data Overlay (Left Side)
-            // Reorganized to avoid repetition and prioritize clarity.
-            // Order: Observation (Most important) -> Topocentric -> Geocentric
-
             const padding = 20;
             let lineY = padding;
             const lineHeight = 16;
@@ -912,7 +877,7 @@ export default function SimulationModal({
             ctx.fillText(t.visibilityAnalysis, padding, lineY);
             lineY += lineHeight * 1.5;
 
-            // --- Date & Time (Global Context) ---
+            // --- Date & Time ---
             ctx.font = '12px Tajawal, sans-serif';
             const dateStr = new Date(data.sunsetIso).toLocaleDateString(locale === 'ar' ? 'ar-SA' : 'en-GB', {
                 weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric'
@@ -920,7 +885,7 @@ export default function SimulationModal({
             ctx.fillText(dateStr, padding, lineY + 2);
             lineY += lineHeight * 1.5;
 
-            // --- OBSERVATIONAL DATA (Top Priority) ---
+            // --- OBSERVATIONAL DATA ---
             ctx.font = 'bold 12px Tajawal, sans-serif';
             ctx.fillStyle = '#ffffff';
             ctx.fillText(t.observation.toUpperCase(), padding, lineY);
@@ -929,7 +894,6 @@ export default function SimulationModal({
             ctx.font = '12px Tajawal, sans-serif';
             ctx.fillStyle = '#ffffff';
 
-            // Lag Time calculation (Moonset - Sunset)
             let lagTimeStr = '--';
             if (data.moonsetIso && data.sunsetIso) {
                 const diffMs = new Date(data.moonsetIso).getTime() - new Date(data.sunsetIso).getTime();
@@ -1009,13 +973,10 @@ export default function SimulationModal({
                 lineY += lineHeight;
             });
 
-            // 2. Moon Labels - REMOVED (Asked to remove beside the moon)
-            // if (moonPos.y > 0 && moonPos.y < H) { ... }
-
             // 3. Sky Body Lines (Elongation)
             const sunScreenPos = toScreen(frame.sunAz, frame.sunAlt);
+            const moonPos = toScreen(frame.moonAz, frame.moonAlt);
 
-            // Ensure Sun is somewhat reasonable to draw line to
             if (sunScreenPos.y > -1000 && sunScreenPos.y < H + 1000) {
                 ctx.strokeStyle = '#aaaaaa';
                 ctx.setLineDash([2, 2]);
@@ -1025,7 +986,6 @@ export default function SimulationModal({
                 ctx.stroke();
                 ctx.setLineDash([]);
 
-                // Label on line midpoint
                 const midX = (sunScreenPos.x + moonPos.x) / 2;
                 const midY = (sunScreenPos.y + moonPos.y) / 2;
                 ctx.shadowColor = 'rgba(0,0,0,0.8)';
@@ -1039,13 +999,11 @@ export default function SimulationModal({
                 ctx.shadowBlur = 0;
                 ctx.textAlign = 'left';
             }
-
-            // 4. Horizon Labels (Azimuths & Set Times) - REMOVED AS REQUESTED
-            // User requested to remove Moonset/Sunset/Azimuth labels from the "entire map" and put them in the left side panel.
-
         }
 
-    }, [frame, stars, skyline, showBuildings, showAdvancedDetails, data, locale, t, viewAz, viewAlt, fov, canvasSize]);
+
+    }, [frame, stars, skyline, showBuildings, showAdvancedDetails, data, locale, t, viewAz, viewAlt, fov, canvasSize, showOverlay]);
+
 
     // Resizing logic - Fix squishing by using ResizeObserver
     useEffect(() => {
@@ -1196,6 +1154,11 @@ export default function SimulationModal({
                                     <div className="flex items-center gap-2">
                                         <Checkbox id="build" checked={showBuildings} onCheckedChange={c => setShowBuildings(!!c)} className="border-muted-foreground" />
                                         <Label htmlFor="build" className="text-muted-foreground cursor-pointer">{t.showBuildings}</Label>
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                        <Checkbox id="overlay" checked={showOverlay} onCheckedChange={c => setShowOverlay(!!c)} className="border-muted-foreground" />
+                                        <Label htmlFor="overlay" className="text-muted-foreground cursor-pointer">{t.showData}</Label>
                                     </div>
 
                                     <Button

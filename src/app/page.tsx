@@ -2,6 +2,8 @@
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Moon, Sun, MapPin, Loader2, ChevronDown, Eye, Info, ExternalLink, X, Settings2, Download } from 'lucide-react';
+import { enGB, ar } from 'date-fns/locale';
+
 import { format } from 'date-fns';
 import Link from 'next/link';
 
@@ -541,14 +543,18 @@ export default function Home() {
         {/* Legend - Bottom Left Overlay - Conditional & Responsive */}
         {visibilityPoints.length > 0 && (
           isLegendVisible ? (
-            <div className={cn(
-              "absolute bottom-4 bg-card/90 backdrop-blur-md rounded-2xl border p-3 shadow-lg pointer-events-auto text-xs transition-transform scale-75 md:scale-100 z-10",
-              isArabic ? "right-4 text-right origin-bottom-right" : "left-4 text-left origin-bottom-left"
-            )} dir={isArabic ? 'rtl' : 'ltr'}>
+            <div
+              className={cn(
+                "absolute bottom-4 bg-card/90 backdrop-blur-md rounded-2xl border p-3 shadow-lg pointer-events-auto text-xs transition-transform scale-75 md:scale-100 z-30",
+                isArabic ? "right-4 text-right origin-bottom-right" : "left-4 text-left origin-bottom-left"
+              )}
+              dir={isArabic ? 'rtl' : 'ltr'}
+              onClick={(e) => e.stopPropagation()}
+            >
               {/* Header with Close Button */}
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-muted-foreground uppercase opacity-70 text-[10px] tracking-wider">{t.legend}</span>
-                <button onClick={() => setIsLegendVisible(false)} className="hover:bg-muted rounded-full p-0.5 transition-colors">
+                <button onClick={(e) => { e.stopPropagation(); setIsLegendVisible(false); }} className="hover:bg-muted rounded-full p-0.5 transition-colors">
                   <X className="w-3 h-3 text-muted-foreground" />
                 </button>
               </div>
@@ -561,9 +567,9 @@ export default function Home() {
             </div>
           ) : (
             <button
-              onClick={() => setIsLegendVisible(true)}
+              onClick={(e) => { e.stopPropagation(); setIsLegendVisible(true); }}
               className={cn(
-                "absolute bottom-4 z-10 p-2 bg-card/90 backdrop-blur-md border rounded-full shadow-lg hover:scale-110 transition-transform",
+                "absolute bottom-4 z-30 p-2 bg-card/90 backdrop-blur-md border rounded-full shadow-lg hover:scale-110 transition-transform",
                 isArabic ? "right-4" : "left-4"
               )}
               title={t.showLegend}
@@ -592,9 +598,7 @@ export default function Home() {
                 <span className="font-semibold text-lg">{t.appName}</span>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="icon" className="h-9 w-9 rounded-2xl border-input shadow-sm" onClick={() => setDarkMode(!darkMode)}>
-                  {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                </Button>
+
                 <Select value={locale} onValueChange={(v) => setLocale(v as Locale)}>
                   <SelectTrigger className="w-32 h-9 rounded-2xl border-input bg-background shadow-sm text-center">
                     <SelectValue />
@@ -617,7 +621,17 @@ export default function Home() {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0 rounded-2xl" align="center">
-                  <Calendar mode="single" selected={selectedDate} onSelect={(d) => { if (d) { handleDateChange(d); setDatePickerOpen(false); } }} initialFocus />
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(d) => { if (d) { handleDateChange(d); setDatePickerOpen(false); } }}
+                    initialFocus
+                    captionLayout="dropdown"
+                    fromYear={1900}
+                    toYear={2100}
+                    locale={isArabic ? ar : enGB}
+                    dir={isArabic ? 'rtl' : 'ltr'}
+                  />
                 </PopoverContent>
               </Popover>
               <div className="text-sm text-primary bg-primary/5 rounded-2xl px-3 py-2.5 text-center font-medium">
@@ -629,7 +643,7 @@ export default function Home() {
             <div className="space-y-2 text-center">
               <label className="text-sm font-medium block text-center text-muted-foreground">{t.islamicMonth}</label>
               <Select value={`${selectedHijriYear}-${selectedHijriMonth}`} onValueChange={handleMonthSelect}>
-                <SelectTrigger className="w-full h-11 rounded-2xl border-muted-foreground/20 text-center font-medium text-base"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full h-11 rounded-2xl border-muted-foreground/20 text-center font-medium text-base [&>span]:flex-1 [&>span]:flex [&>span]:justify-center"><SelectValue /></SelectTrigger>
                 <SelectContent className="rounded-2xl">
                   {upcomingMonths.map((m) => (
                     <SelectItem key={m.value} value={m.value} className="rounded-xl justify-center text-center text-base">
@@ -655,17 +669,17 @@ export default function Home() {
 
 
             {/* Controls Grid - Criterion | Resolution | Projection */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-3 pt-2">
+            <div className="grid grid-cols-1 gap-3 pt-2">
               {/* Criterion */}
-              <div className="space-y-1.5 col-span-1 md:col-span-2">
-                <div className="flex items-center justify-between px-1">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between px-1 h-6">
                   <label className="text-sm font-medium text-muted-foreground">{t.criterion}</label>
-                  <Link href="/criteria">
+                  <Link href="/criteria" className="flex items-center">
                     <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full"><Info className="w-4 h-4 text-muted-foreground" /></Button>
                   </Link>
                 </div>
                 <Select value={criterion} onValueChange={(v) => setCriterion(v as Criterion)}>
-                  <SelectTrigger className="w-full h-11 rounded-2xl border-muted-foreground/20 bg-card text-base text-center"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full h-11 rounded-2xl border-muted-foreground/20 bg-card text-base text-center [&>span]:flex-1 [&>span]:flex [&>span]:justify-center"><SelectValue /></SelectTrigger>
                   <SelectContent className="rounded-2xl">{CRITERIA.map((c) => <SelectItem key={c.id} value={c.id} className="rounded-xl text-base justify-center text-center">{c.name}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
@@ -674,7 +688,7 @@ export default function Home() {
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-muted-foreground pl-1">{t.resolution}</label>
                 <Select value={resolution} onValueChange={setResolution}>
-                  <SelectTrigger className="w-full rounded-2xl h-11 text-base text-center"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full rounded-2xl h-11 text-base text-center [&>span]:flex-1 [&>span]:flex [&>span]:justify-center"><SelectValue /></SelectTrigger>
                   <SelectContent className="rounded-2xl">{RESOLUTIONS.map((r) => <SelectItem key={r.value} value={r.value} className="rounded-xl text-base justify-center text-center">{r.label}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
@@ -683,8 +697,17 @@ export default function Home() {
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-muted-foreground pl-1">{t.projection}</label>
                 <Select value={projection} onValueChange={(v) => setProjection(v as MapProjection)}>
-                  <SelectTrigger className="w-full rounded-2xl h-11 text-base text-center"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full rounded-2xl h-11 text-base text-center [&>span]:flex-1 [&>span]:flex [&>span]:justify-center"><SelectValue /></SelectTrigger>
                   <SelectContent className="rounded-2xl">{MAP_PROJECTIONS.map((p) => <SelectItem key={p.id} value={p.id} className="rounded-xl text-base justify-center text-center">{p.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+
+              {/* Coverage */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-muted-foreground pl-1">{t.coverage}</label>
+                <Select value={maxLat} onValueChange={setMaxLat}>
+                  <SelectTrigger className="w-full rounded-2xl h-11 text-base text-center [&>span]:flex-1 [&>span]:flex [&>span]:justify-center"><SelectValue /></SelectTrigger>
+                  <SelectContent className="rounded-2xl">{LAT_COVERAGE.map((c) => <SelectItem key={c.value} value={c.value} className="rounded-xl text-base justify-center text-center">{c.label}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
             </div>
@@ -721,6 +744,8 @@ export default function Home() {
         locale={locale}
         fontSize={fontSize}
         setFontSize={setFontSize}
+        darkMode={darkMode}
+        setDarkMode={setDarkMode}
       />
     </div>
   );

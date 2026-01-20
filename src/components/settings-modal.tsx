@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { getTranslations, Locale } from '@/lib/i18n';
-import { Settings2, RotateCcw, Monitor, User, Globe, Mail } from 'lucide-react';
+import { Settings2, RotateCcw, Monitor, User, Globe, Mail, Moon, Sun } from 'lucide-react';
 
 interface SettingsModalProps {
     isOpen: boolean;
@@ -11,6 +11,8 @@ interface SettingsModalProps {
     locale: Locale;
     fontSize: number;
     setFontSize: (size: number) => void;
+    darkMode: boolean;
+    setDarkMode: (dark: boolean) => void;
 }
 
 export default function SettingsModal({
@@ -19,6 +21,8 @@ export default function SettingsModal({
     locale,
     fontSize,
     setFontSize,
+    darkMode,
+    setDarkMode
 }: SettingsModalProps) {
     const t = getTranslations(locale);
     const isRTL = locale === 'ar';
@@ -42,6 +46,22 @@ export default function SettingsModal({
 
                 <div className="space-y-6 py-4">
 
+                    {/* Dark Mode Toggle */}
+                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl border border-border/50">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-background rounded-full border shadow-sm">
+                                {darkMode ? <Moon className="w-4 h-4 text-blue-400" /> : <Sun className="w-4 h-4 text-orange-400" />}
+                            </div>
+                            <div className="space-y-0.5">
+                                <div className="font-semibold text-sm">Appearance</div>
+                                <div className="text-xs text-muted-foreground">{darkMode ? 'Dark Mode' : 'Light Mode'}</div>
+                            </div>
+                        </div>
+                        <Button variant="outline" size="sm" onClick={() => setDarkMode(!darkMode)} className="rounded-xl h-8">
+                            {darkMode ? 'Switch to Light' : 'Switch to Dark'}
+                        </Button>
+                    </div>
+
 
                     {/* Font Size Section */}
                     <div className="space-y-4">
@@ -50,7 +70,6 @@ export default function SettingsModal({
                                 <Monitor className="w-4 h-4 text-muted-foreground" />
                                 {t.adjustFontSize}
                             </h3>
-                            <Badge variant="outline" className="font-mono">{Math.round(fontSize * 16)}px</Badge>
                         </div>
 
                         <div className="bg-muted/50 p-4 rounded-xl space-y-4">
@@ -75,9 +94,6 @@ export default function SettingsModal({
                                 <span>Large</span>
                             </div>
                         </div>
-                        <p className="text-xs text-muted-foreground italic text-center" style={{ fontSize: `${fontSize}rem` }}>
-                            {t.appName}
-                        </p>
                     </div>
 
                     <Separator />
@@ -89,27 +105,27 @@ export default function SettingsModal({
                             {t.aboutApp}
                         </h3>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="p-3 bg-muted/30 rounded-xl border border-border/50">
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="p-3 bg-muted/30 rounded-xl border border-border/50 flex flex-col justify-between h-20">
                                 <div className="text-xs text-muted-foreground mb-1">{t.developedBy}</div>
-                                <div className="font-semibold flex items-center gap-2">
-                                    <Globe className="w-3 h-3 text-primary" />
+                                <div className="font-semibold flex items-center gap-2 text-sm">
+                                    <Globe className="w-3 h-3 text-primary shrink-0" />
                                     Constant Labs
                                 </div>
                             </div>
-                            <div className="p-3 bg-muted/30 rounded-xl border border-border/50">
+                            <div className="p-3 bg-muted/30 rounded-xl border border-border/50 flex flex-col justify-between h-20">
                                 <div className="text-xs text-muted-foreground mb-1">{t.projectLead}</div>
-                                <div className="font-semibold">Ahmad</div>
+                                <div className="font-semibold text-sm">Ahmad</div>
                             </div>
-                            <div className="p-3 bg-muted/30 rounded-xl border border-border/50">
+                            <div className="p-3 bg-muted/30 rounded-xl border border-border/50 flex flex-col justify-between h-20">
                                 <div className="text-xs text-muted-foreground mb-1">{t.version}</div>
                                 <div className="font-semibold font-mono text-xs">v1.2.0 (Beta)</div>
                             </div>
-                            <div className="p-3 bg-muted/30 rounded-xl border border-border/50">
+                            <div className="p-3 bg-muted/30 rounded-xl border border-border/50 flex flex-col justify-between h-20">
                                 <div className="text-xs text-muted-foreground mb-1">{t.contact}</div>
-                                <div className="font-semibold flex items-center gap-2 text-xs">
-                                    <Mail className="w-3 h-3 text-primary" />
-                                    <a href="mailto:akhmad6093@gmail.com" className="hover:underline">akhmad6093@gmail.com</a>
+                                <div className="font-semibold flex items-center gap-2 text-xs truncate">
+                                    <Mail className="w-3 h-3 text-primary shrink-0" />
+                                    <a href="mailto:akhmad6093@gmail.com" className="hover:underline truncate">akhmad6093@gmail.com</a>
                                 </div>
                             </div>
                         </div>
