@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { Moon, Sun, MapPin, Loader2, ChevronDown, Eye, Info, ExternalLink, X, Settings2 } from 'lucide-react';
+import { Moon, Sun, MapPin, Loader2, ChevronDown, Eye, Info, ExternalLink, X, Settings2, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
 
@@ -128,6 +128,7 @@ export default function Home() {
   const [simulationData, setSimulationData] = useState<SimulationData | null>(null);
   const [showSimulation, setShowSimulation] = useState(false);
   const [tapMessageDismissed, setTapMessageDismissed] = useState(false);
+  const [isLegendVisible, setIsLegendVisible] = useState(true);
 
   // Edit coords state
 
@@ -440,6 +441,43 @@ export default function Home() {
     }, 50);
   }, [selectedDate, resolution, criterion, maxLat]);
 
+  const handleDownloadMap = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // Create a temporary canvas to combine background color + map content 
+    // because standard canvas export might have transparent background
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = canvas.width;
+    tempCanvas.height = canvas.height;
+    const tCtx = tempCanvas.getContext('2d');
+    if (!tCtx) return;
+
+    // Fill background
+    tCtx.fillStyle = darkMode ? '#0a1628' : '#e2e8f0';
+    tCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+    // Draw original canvas
+    tCtx.drawImage(canvas, 0, 0);
+
+    // Draw Legend/Credits overlay if needed? Maybe keept it clean.
+    // Let's just download the map view.
+
+    const link = document.createElement('a');
+    link.download = `crescent-watch-map-${format(selectedDate, 'yyyy-MM-dd')}.png`;
+    link.href = tempCanvas.toDataURL('image/png');
+    link.click();
+  }, [selectedDate, darkMode]);
+
+
+  // Mobile Auto-Scroll on Calculate
+  // We'll attach this to the button click handler, but simpler to do here
+  useEffect(() => {
+    if (isCalculating && window.innerWidth < 768 && mapContainerRef.current) {
+      mapContainerRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [isCalculating]);
+
   const getZoneBg = (zone?: string) => {
     switch (zone) {
       case 'A': return 'bg-green-500';
@@ -473,6 +511,11 @@ export default function Home() {
           </Button>
         </div>
 
+        {/* Download Map Button - Top Right */}
+        <div className="absolute top-4 right-4 z-20 pointer-events-auto md:hidden">
+          {/* Mobile Download Button if needed, currently sidebar blocks right side on desktop but on mobile it's stacked */}
+        </div>
+
         {isCalculating && (
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center gap-2 z-10">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -495,18 +538,45 @@ export default function Home() {
 
         {/* Legend - Bottom Left Overlay */}
         {/* Legend - Bottom Left Overlay - Conditional & Responsive */}
-        {!isCalculating && visibilityPoints.length > 0 && (
-          <div className={cn(
-            "absolute bottom-4 bg-card/90 backdrop-blur-md rounded-2xl border p-3 shadow-lg pointer-events-none text-xs transition-transform scale-75 md:scale-100",
-            isArabic ? "right-4 text-right origin-bottom-right" : "left-4 text-left origin-bottom-left"
-          )} dir={isArabic ? 'rtl' : 'ltr'}>
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-green-500" /><span>{t.zoneA}: {t.zoneADesc}</span></div>
-              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-yellow-500" /><span>{t.zoneB}: {t.zoneBDesc}</span></div>
-              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-orange-500" /><span>{t.zoneC}: {t.zoneCDesc}</span></div>
-              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-red-500" /><span>{t.zoneD}: {t.zoneDDesc}</span></div>
+        {/* Legend - Bottom Left Overlay - Conditional & Responsive */}
+        {visibilityPoints.length > 0 && (
+          isLegendVisible ? (
+            <div className={cn(
+              "absolute bottom-4 bg-card/90 backdrop-blur-md rounded-2xl border p-3 shadow-lg pointer-events-auto text-xs transition-transform scale-75 md:scale-100 z-10",
+              isArabic ? "right-4 text-right origin-bottom-right" : "left-4 text-left origin-bottom-left"
+            )} dir={isArabic ? 'rtl' : 'ltr'}>
+              {/* Header with Close Button */}
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-bold text-muted-foreground uppercase opacity-70 text-[10px] tracking-wider">{t.legend}</span>
+                <button onClick={() => setIsLegendVisible(false)} className="hover:bg-muted rounded-full p-0.5 transition-colors">
+                  <X className="w-3 h-3 text-muted-foreground" />
+                </button>
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-green-500" /><span>{t.zoneA}: {t.zoneADesc}</span></div>
+                <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-yellow-500" /><span>{t.zoneB}: {t.zoneBDesc}</span></div>
+                <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-orange-500" /><span>{t.zoneC}: {t.zoneCDesc}</span></div>
+                <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-red-500" /><span>{t.zoneD}: {t.zoneDDesc}</span></div>
+              </div>
             </div>
-          </div>
+          ) : (
+            <button
+              onClick={() => setIsLegendVisible(true)}
+              className={cn(
+                "absolute bottom-4 z-10 p-2 bg-card/90 backdrop-blur-md border rounded-full shadow-lg hover:scale-110 transition-transform",
+                isArabic ? "right-4" : "left-4"
+              )}
+              title={t.showLegend}
+            >
+              {/* Tiny representation of legend colors */}
+              <div className="grid grid-cols-2 gap-0.5 w-4 h-4">
+                <div className="bg-green-500 rounded-tl-[1px]"></div>
+                <div className="bg-yellow-500 rounded-tr-[1px]"></div>
+                <div className="bg-orange-500 rounded-bl-[1px]"></div>
+                <div className="bg-red-500 rounded-br-[1px]"></div>
+              </div>
+            </button>
+          )
         )}
 
       </div>
@@ -583,31 +653,33 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Criterion */}
-            <div className="space-y-2 pt-2">
-              <div className="flex items-center justify-between px-1">
-                <label className="text-sm font-medium text-muted-foreground">{t.criterion}</label>
-                <Link href="/criteria">
-                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full"><Info className="w-4 h-4 text-muted-foreground" /></Button>
-                </Link>
+
+            {/* Controls Grid - Criterion | Resolution | Projection */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-3 pt-2">
+              {/* Criterion */}
+              <div className="space-y-1.5 col-span-1 md:col-span-2">
+                <div className="flex items-center justify-between px-1">
+                  <label className="text-sm font-medium text-muted-foreground">{t.criterion}</label>
+                  <Link href="/criteria">
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full"><Info className="w-4 h-4 text-muted-foreground" /></Button>
+                  </Link>
+                </div>
+                <Select value={criterion} onValueChange={(v) => setCriterion(v as Criterion)}>
+                  <SelectTrigger className="w-full h-11 rounded-2xl border-muted-foreground/20 bg-card text-base text-center"><SelectValue /></SelectTrigger>
+                  <SelectContent className="rounded-2xl">{CRITERIA.map((c) => <SelectItem key={c.id} value={c.id} className="rounded-xl text-base justify-center text-center">{c.name}</SelectItem>)}</SelectContent>
+                </Select>
               </div>
-              <Select value={criterion} onValueChange={(v) => setCriterion(v as Criterion)}>
-                <SelectTrigger className="w-full h-11 rounded-2xl border-muted-foreground/20 bg-card text-base text-center"><SelectValue /></SelectTrigger>
-                <SelectContent className="rounded-2xl">{CRITERIA.map((c) => <SelectItem key={c.id} value={c.id} className="rounded-xl text-base justify-center text-center">{c.name}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
 
-            {/* Resolution - Moved up as requested */}
-            <div className="space-y-1.5 pt-2">
-              <label className="text-sm font-medium text-muted-foreground pl-1">{t.resolution}</label>
-              <Select value={resolution} onValueChange={setResolution}>
-                <SelectTrigger className="w-full rounded-2xl h-11 text-base text-center"><SelectValue /></SelectTrigger>
-                <SelectContent className="rounded-2xl">{RESOLUTIONS.map((r) => <SelectItem key={r.value} value={r.value} className="rounded-xl text-base justify-center text-center">{r.label}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
+              {/* Resolution */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-muted-foreground pl-1">{t.resolution}</label>
+                <Select value={resolution} onValueChange={setResolution}>
+                  <SelectTrigger className="w-full rounded-2xl h-11 text-base text-center"><SelectValue /></SelectTrigger>
+                  <SelectContent className="rounded-2xl">{RESOLUTIONS.map((r) => <SelectItem key={r.value} value={r.value} className="rounded-xl text-base justify-center text-center">{r.label}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
 
-            {/* Projection & Coverage - Stacked vertically */}
-            <div className="space-y-3 pt-2">
+              {/* Projection */}
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-muted-foreground pl-1">{t.projection}</label>
                 <Select value={projection} onValueChange={(v) => setProjection(v as MapProjection)}>
@@ -615,21 +687,15 @@ export default function Home() {
                   <SelectContent className="rounded-2xl">{MAP_PROJECTIONS.map((p) => <SelectItem key={p.id} value={p.id} className="rounded-xl text-base justify-center text-center">{p.name}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-muted-foreground pl-1">{t.coverage}</label>
-                <Select value={maxLat} onValueChange={setMaxLat}>
-                  <SelectTrigger className="w-full rounded-2xl h-11 text-base text-center"><SelectValue /></SelectTrigger>
-                  <SelectContent className="rounded-2xl">{LAT_COVERAGE.map((l) => <SelectItem key={l.value} value={l.value} className="rounded-xl text-base justify-center text-center">{l.label}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
             </div>
 
-
-
-            {/* Calculate Button - Remove Eye Icon */}
-            <div className="pt-4">
-              <Button className="w-full h-12 rounded-2xl text-base font-semibold shadow-md" onClick={handleCalculate} disabled={isCalculating}>
+            {/* Calculate & Map Download Actions */}
+            <div className="pt-4 flex gap-2">
+              <Button className="flex-1 h-12 rounded-2xl text-base font-semibold shadow-md" onClick={handleCalculate} disabled={isCalculating}>
                 {isCalculating ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />{progress}%</> : t.calculate}
+              </Button>
+              <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl border-input shadow-sm shrink-0" onClick={handleDownloadMap} title="Download Map Image">
+                <Download className="w-5 h-5" />
               </Button>
             </div>
 

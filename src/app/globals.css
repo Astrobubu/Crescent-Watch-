@@ -159,10 +159,16 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-sans);
+    /* Default for English/en */
     overscroll-behavior: none;
     letter-spacing: var(--tracking-normal);
     font-size: 1.1rem;
-    /* Slightly larger base size */
+  }
+
+  /* Arabic Font Override using :lang() */
+  html:lang(ar) body,
+  :lang(ar) {
+    font-family: var(--font-arabic), "Tajawal", "Segoe UI", sans-serif;
   }
 
 

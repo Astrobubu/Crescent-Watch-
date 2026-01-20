@@ -38,6 +38,7 @@ export interface Translations {
     legendAlt: string;
     legendElong: string;
     showBuildings: string;
+    showLegend: string;
 
     // Visibility zones
     zoneA: string;
@@ -166,6 +167,7 @@ const translations: Record<Locale, Translations> = {
         legendAlt: 'Altitude',
         legendElong: 'Elongation',
         showBuildings: 'Show Buildings',
+        showLegend: 'Show Legend',
 
         zoneA: 'Zone A',
         zoneB: 'Zone B',
@@ -287,6 +289,7 @@ const translations: Record<Locale, Translations> = {
         legendAlt: 'الارتفاع',
         legendElong: 'الاستطالة',
         showBuildings: 'إظهار المباني',
+        showLegend: 'إظهار الدليل',
 
         zoneA: 'المنطقة أ',
         zoneB: 'المنطقة ب',

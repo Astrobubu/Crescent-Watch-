@@ -43,40 +43,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-                try {
-                  const font = 'var(--font-tajawal), "Tajawal", sans-serif';
-                  document.documentElement.style.setProperty('--font-arabic', font);
-                  
-                  const forceFont = () => {
-                    if (document.body) {
-                      document.body.style.setProperty('font-family', font, 'important');
-                      document.body.classList.add('font-arabic');
-                    }
-                  };
-                  
-                  // Try immediately
-                  forceFont();
-                  
-                  // Try on load
-                  window.addEventListener('DOMContentLoaded', forceFont);
-                  window.addEventListener('load', forceFont);
-                  
-                  // Observer for safe measure
-                  const observer = new MutationObserver(() => {
-                    if (document.body && !document.body.style.getPropertyValue('font-family').includes('Tajawal')) {
-                       forceFont();
-                    }
-                  });
-                  if (document.body) observer.observe(document.body, { attributes: true, attributeFilter: ['style', 'class'] });
-                  else document.addEventListener('DOMContentLoaded', () => observer.observe(document.body, { attributes: true, attributeFilter: ['style', 'class'] }));
-                  
-                } catch(e) {}
-              `,
-          }}
-        />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;700;800;900&display=swap" rel="stylesheet" />
       </head>
       <body
         className={`${outfit.variable} ${tajawal.variable} antialiased font-sans`}
