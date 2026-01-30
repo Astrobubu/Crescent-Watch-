@@ -578,7 +578,8 @@ export function formatDec(degrees: number): string {
  * Get Moon RA/Dec at a given time
  */
 export function getMoonRaDec(date: Date): { ra: number; dec: number } {
-    const eq = Astronomy.Equator(Astronomy.Body.Moon, date, null, false, true);
+    // Use geocentric equatorial coordinates (no observer needed)
+    const eq = Astronomy.Equator(Astronomy.Body.Moon, date, new Astronomy.Observer(0, 0, 0), false, true);
     return { ra: eq.ra, dec: eq.dec };
 }
 
