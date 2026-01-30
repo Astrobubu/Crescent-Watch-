@@ -551,6 +551,38 @@ export function formatCoordinate(degrees: number): string {
 }
 
 /**
+ * Format Right Ascension (hours) to HMS string
+ */
+export function formatRA(hours: number): string {
+    const h = Math.floor(hours);
+    const mFloat = (hours - h) * 60;
+    const m = Math.floor(mFloat);
+    const s = ((mFloat - m) * 60).toFixed(1);
+    return `${h.toString().padStart(2, '0')}h${m.toString().padStart(2, '0')}m${s.padStart(4, '0')}s`;
+}
+
+/**
+ * Format Declination (degrees) to DMS string with sign
+ */
+export function formatDec(degrees: number): string {
+    const sign = degrees >= 0 ? '+' : '-';
+    const abs = Math.abs(degrees);
+    const d = Math.floor(abs);
+    const mFloat = (abs - d) * 60;
+    const m = Math.floor(mFloat);
+    const s = ((mFloat - m) * 60).toFixed(1);
+    return `${sign}${d.toString().padStart(2, '0')}°${m.toString().padStart(2, '0')}'${s.padStart(4, '0')}"`;
+}
+
+/**
+ * Get Moon RA/Dec at a given time
+ */
+export function getMoonRaDec(date: Date): { ra: number; dec: number } {
+    const eq = Astronomy.Equator(Astronomy.Body.Moon, date, null, false, true);
+    return { ra: eq.ra, dec: eq.dec };
+}
+
+/**
  * Enhanced simulation data with conjunction, moonset, and moon age
  */
 export interface EnhancedSimulationData {

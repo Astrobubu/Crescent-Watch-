@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { X, Loader2, RefreshCw, ChevronDown, ChevronUp, Download, Play, Pause } from 'lucide-react';
 import { getTranslations, Locale, isRTL } from '@/lib/i18n';
-import { formatDMS, formatMoonAge, formatCoordinate } from '@/lib/astronomy';
+import { formatDMS, formatMoonAge, formatCoordinate, formatRA, formatDec, getMoonRaDec } from '@/lib/astronomy';
 
 // Type definitions matching astronomy.ts output
 export interface SimulationPoint {
@@ -665,6 +665,41 @@ export default function SimulationModal({
             ctx.stroke();
 
             ctx.restore();
+
+            // Moon altitude line (perpendicular to horizon)
+            if (frame.moonAlt > 0) {
+                const horizonPoint = toScreen(frame.moonAz, 0);
+                ctx.save();
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(moonPos.x, moonPos.y + moonRadius + 5);
+                ctx.lineTo(horizonPoint.x, horizonPoint.y);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Altitude label
+                const midY = (moonPos.y + horizonPoint.y) / 2;
+                ctx.font = '11px monospace';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                ctx.textAlign = 'left';
+                ctx.fillText(`${frame.moonAlt.toFixed(1)}°`, moonPos.x + 8, midY);
+                ctx.restore();
+            }
+
+            // Moon age label (next to moon)
+            if (frame.moonAge !== undefined) {
+                ctx.save();
+                ctx.font = '10px monospace';
+                ctx.fillStyle = 'rgba(255, 220, 150, 0.8)';
+                ctx.textAlign = 'left';
+                const ageText = frame.moonAge < 48
+                    ? `${frame.moonAge.toFixed(1)}h`
+                    : `${(frame.moonAge / 24).toFixed(1)}d`;
+                ctx.fillText(ageText, moonPos.x + moonRadius + 8, moonPos.y - 5);
+                ctx.restore();
+            }
         }
 
         // Reset Shadow
@@ -926,6 +961,10 @@ export default function SimulationModal({
                 lagTimeStr = `${diffMins} min`;
             }
 
+            // Get Moon RA/Dec for current time
+            const currentDate = new Date(new Date(data.sunsetIso).getTime() + timeOffset * 60000);
+            const moonRaDec = getMoonRaDec(currentDate);
+
             const observationItems = [
                 { label: t.sunsetTime, value: data.sunsetIso ? new Date(data.sunsetIso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }) : '--:--' },
                 { label: t.moonsetTime, value: data.moonsetIso ? new Date(data.moonsetIso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }) : '--:--' },
@@ -938,6 +977,8 @@ export default function SimulationModal({
                 { label: t.azimuthDiff, value: formatNum((Math.abs(frame.moonAz - frame.sunAz)).toFixed(2)) + '°' },
                 { label: t.elongation, value: formatDMS(frame.elongation).replace(/[٠-٩]/g, d => '0123456789'['٠١٢٣٤٥٦٧٩'.indexOf(d)]) },
                 { label: 'Moon Orientation', value: formatNum(frame.tilt.toFixed(2)) + '°' },
+                { label: 'Moon RA', value: formatRA(moonRaDec.ra) },
+                { label: 'Moon Dec', value: formatDec(moonRaDec.dec) },
             ];
 
             observationItems.forEach(item => {
@@ -1041,7 +1082,7 @@ export default function SimulationModal({
                 }
             }
         }
-    }, [frame, stars, skyline, showBuildings, showAdvancedDetails, data, locale, t, viewAz, viewAlt, fov, canvasSize, showOverlay]);
+    }, [frame, stars, skyline, showBuildings, showAdvancedDetails, data, locale, t, viewAz, viewAlt, fov, canvasSize, showOverlay, timeOffset]);
 
 
     // Resizing logic - Fix squishing by using ResizeObserver
