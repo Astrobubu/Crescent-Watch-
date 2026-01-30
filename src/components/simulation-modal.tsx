@@ -648,60 +648,56 @@ export default function SimulationModal({
             ctx.fillStyle = 'rgba(40, 45, 55, 0.9)';
             ctx.fill();
 
-            // Illuminated crescent using proper geometry
-            // The terminator (day/night line) is an ellipse
+            // Illuminated crescent using proper spherical geometry
+            // k = illumination fraction: 0 = new moon, 0.5 = quarter, 1 = full
+            // The terminator (day/night line) is an ellipse with width = r * |2k - 1|
             ctx.fillStyle = '#fffef5';
+
+            // Calculate terminator width from illumination
+            // At k=0 (new): terminator width = r (same as limb, no crescent)
+            // At k=0.5 (quarter): terminator width = 0 (straight line)
+            // At k=1 (full): terminator width = r (same as limb, full circle)
+            const terminatorWidth = r * Math.abs(2 * k - 1);
 
             if (k <= 0.5) {
                 // Waxing crescent to first quarter
-                // Lit portion is on the right side (positive x after rotation)
-                const terminatorX = r * (1 - 2 * k); // Goes from r (new) to 0 (half)
+                // Lit portion is on the right, crescent curves inward
 
-                ctx.beginPath();
-                // Right semicircle (lit limb)
-                ctx.arc(0, 0, r, -Math.PI / 2, Math.PI / 2, false);
-                // Terminator curve (ellipse from bottom to top)
-                if (k > 0.001) {
-                    // Draw terminator as bezier curve
-                    const cp = terminatorX * 0.55; // Control point factor
-                    ctx.bezierCurveTo(cp, r, cp, -r, 0, -r);
+                if (k < 0.003) {
+                    // Nearly new moon - just a tiny sliver
+                    ctx.beginPath();
+                    ctx.arc(0, 0, r, -0.1, 0.1, false);
+                    ctx.closePath();
+                    ctx.fill();
                 } else {
-                    // Nearly new moon - just close the path
-                    ctx.lineTo(0, -r);
+                    ctx.beginPath();
+                    // Outer limb: right semicircle from top (-π/2) to bottom (π/2)
+                    ctx.arc(0, 0, r, -Math.PI / 2, Math.PI / 2, false);
+                    // Inner terminator: ellipse from bottom back to top (counterclockwise)
+                    // This creates the crescent between limb and terminator
+                    ctx.ellipse(0, 0, terminatorWidth, r, 0, Math.PI / 2, -Math.PI / 2, true);
+                    ctx.closePath();
+                    ctx.fill();
                 }
-                ctx.closePath();
-                ctx.fill();
             } else {
                 // First quarter to full moon
                 // More than half is lit
+
+                // Draw right semicircle (always fully lit when k > 0.5)
                 ctx.beginPath();
-                // Right semicircle
                 ctx.arc(0, 0, r, -Math.PI / 2, Math.PI / 2, false);
                 ctx.closePath();
                 ctx.fill();
 
-                // Additional lit area on left
-                const terminatorX = r * (2 * k - 1); // Goes from 0 (half) to r (full)
-                ctx.beginPath();
-                ctx.ellipse(0, 0, terminatorX, r, 0, Math.PI / 2, -Math.PI / 2, false);
-                ctx.closePath();
-                ctx.fill();
+                // Add gibbous portion on left side
+                // terminatorWidth goes from 0 (at quarter) to r (at full)
+                if (terminatorWidth > 0.01) {
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, terminatorWidth, r, 0, Math.PI / 2, -Math.PI / 2, false);
+                    ctx.closePath();
+                    ctx.fill();
+                }
             }
-
-            // Subtle surface detail on lit portion
-            ctx.globalCompositeOperation = 'multiply';
-            ctx.fillStyle = 'rgba(230, 225, 210, 0.3)';
-            const maria = [
-                { x: 0.2, y: -0.3, r: 0.18 },
-                { x: 0.35, y: 0.15, r: 0.12 },
-                { x: 0.15, y: 0.35, r: 0.1 },
-            ];
-            maria.forEach(m => {
-                ctx.beginPath();
-                ctx.arc(m.x * r, m.y * r, m.r * r, 0, Math.PI * 2);
-                ctx.fill();
-            });
-            ctx.globalCompositeOperation = 'source-over';
 
             ctx.restore();
 
